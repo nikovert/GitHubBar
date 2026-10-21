@@ -14,8 +14,8 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-      - name: Install XcodeGen
-        run: brew install xcodegen
+      - name: Install check tools
+        run: brew install xcodegen ripgrep
       - name: Check core and app sources
         run: scripts/check.sh
       - name: Build macOS app
