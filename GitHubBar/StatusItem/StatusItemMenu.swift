@@ -219,10 +219,37 @@ extension StatusItemController: NSMenuDelegate {
         width: CGFloat = StatusItemController.menuWidth,
         keepsMenuOpenAfterOpening: Bool = false
     ) -> NSMenuItem {
+        let key = try? PullRequestKey(url: pullRequest.url)
+        let memberStack = appModel.state.pullRequestStacks.first { stack in
+            stack.pullRequests.contains { $0.id == pullRequest.id }
+        }
+        let stackRoot = (stackRowContext?.stack ?? memberStack)?.root.flatMap {
+            try? PullRequestKey(url: $0.url)
+        }
+        let subject: BoardSubject? = key.map { key in
+            if stackRowContext != nil, let stackRoot { return .stack(stackRoot) }
+            return .pullRequest(key)
+        }
+        let board = subject.map {
+            workspaceModel.document.resolvedEntry(for: $0, stackRoot: stackRoot)
+        }
+        let boardLabel = board.map { entry -> String in
+            let priority = entry.priority == .none ? "" : entry.priority.rawValue.capitalized
+            let tags = workspaceModel.document.tags
+                .filter { entry.tagIDs.contains($0.id) && !$0.isArchived }
+                .map(\.name).joined(separator: ", ")
+            return [priority, tags].filter { !$0.isEmpty }.joined(separator: " · ")
+        } ?? ""
+        var pinnedSessions = subject.map { workspaceModel.document.sessions(for: $0) } ?? []
+        if stackRowContext == nil, let stackRoot {
+            pinnedSessions += workspaceModel.document.sessions(for: .stack(stackRoot))
+        }
         let highlightState = StatusMenuHighlightState()
         let row = StatusMenuPullRequestRow(
             pullRequest: pullRequest,
             highlightState: highlightState,
+            boardLabel: boardLabel,
+            hasSession: !pinnedSessions.isEmpty,
             stackMembershipCount: stackRowContext.map { context in
                 StatusMenuStackMembershipCount(
                     sectionCount: context.sectionMemberCount,
@@ -236,10 +263,13 @@ extension StatusItemController: NSMenuDelegate {
         .padding(.horizontal, 11)
         .frame(width: width, height: Self.pullRequestRowHeight)
         let onClick: (() -> Void)? = stackRowContext == nil ? { [weak self] in
-            self?.open(
-                pullRequest.url,
-                keepsMenuOpen: keepsMenuOpenAfterOpening
-            )
+            guard let self else { return }
+            if let session = pinnedSessions.first(where: { $0.state == .running }) {
+                self.statusMenu.cancelTracking()
+                self.workspaceModel.focus(session)
+            } else {
+                self.open(pullRequest.url, keepsMenuOpen: keepsMenuOpenAfterOpening)
+            }
         } : nil
         let hosting = StatusMenuRowHostingView(
             rootView: row,
@@ -249,6 +279,11 @@ extension StatusItemController: NSMenuDelegate {
                 stackRowContext: stackRowContext,
                 stackMemberSection: stackMemberSection
             ),
+            onSecondaryClick: { [weak self] in
+                guard let self, let subject else { return }
+                self.statusMenu.cancelTracking()
+                self.actions.openWorkspace(subject)
+            },
             onClick: onClick
         )
         hosting.frame = NSRect(
@@ -273,6 +308,8 @@ extension StatusItemController: NSMenuDelegate {
         item.view = hosting
         item.isEnabled = true
         item.toolTip = pullRequestTooltip(for: pullRequest, stack: stackRowContext?.stack)
+            + (boardLabel.isEmpty ? "" : " · \(boardLabel)")
+            + " · Right-click for workspace"
         if let stackRowContext {
             item.submenu = stackSubmenu(for: stackRowContext.stack)
         } else {
@@ -328,6 +365,23 @@ extension StatusItemController: NSMenuDelegate {
             submenu.addItem(.separator())
             submenu.addItem(viewStack)
         }
+        if let root = stack.root, let key = try? PullRequestKey(url: root.url) {
+            let board = NSMenuItem(
+                title: "Workspace for stack…", action: #selector(openWorkspaceForItem(_:)), keyEquivalent: ""
+            )
+            board.target = self
+            board.representedObject = StatusMenuBoardTarget(subject: .stack(key))
+            submenu.addItem(board)
+            for session in workspaceModel.document.sessions(for: .stack(key)) where session.state == .running {
+                let jump = NSMenuItem(
+                    title: "Jump to \(session.agent.rawValue.capitalized) session",
+                    action: #selector(focusSessionForItem(_:)), keyEquivalent: ""
+                )
+                jump.target = self
+                jump.representedObject = StatusMenuSessionTarget(session: session)
+                submenu.addItem(jump)
+            }
+        }
         return submenu
     }
 
@@ -375,6 +429,12 @@ extension StatusItemController: NSMenuDelegate {
                 systemImage: "arrow.clockwise",
                 shortcut: StatusMenuKeyboardShortcut(keyEquivalent: "r"),
                 selector: #selector(refresh)
+            ),
+            StatusMenuActionDescriptor(
+                title: "Workspace Board…",
+                systemImage: "square.stack.3d.up",
+                shortcut: StatusMenuKeyboardShortcut(keyEquivalent: "b"),
+                selector: #selector(openWorkspaceBoard)
             ),
             StatusMenuActionDescriptor(
                 title: "Settings…",
@@ -601,6 +661,20 @@ extension StatusItemController: NSMenuDelegate {
         actions.openSettings()
     }
 
+    @objc private func openWorkspaceBoard() {
+        actions.openWorkspace(nil)
+    }
+
+    @objc private func openWorkspaceForItem(_ sender: NSMenuItem) {
+        guard let target = sender.representedObject as? StatusMenuBoardTarget else { return }
+        actions.openWorkspace(target.subject)
+    }
+
+    @objc private func focusSessionForItem(_ sender: NSMenuItem) {
+        guard let target = sender.representedObject as? StatusMenuSessionTarget else { return }
+        workspaceModel.focus(target.session)
+    }
+
     @objc private func openAbout() {
         actions.openAbout()
     }
@@ -822,6 +896,18 @@ private final class StatusMenuURLTarget: NSObject {
     }
 }
 
+private final class StatusMenuBoardTarget: NSObject {
+    let subject: BoardSubject
+
+    init(subject: BoardSubject) { self.subject = subject }
+}
+
+private final class StatusMenuSessionTarget: NSObject {
+    let session: AgentSessionLink
+
+    init(session: AgentSessionLink) { self.session = session }
+}
+
 @MainActor
 private protocol StatusMenuHighlighting: AnyObject {
     func setHighlighted(_ highlighted: Bool)
@@ -837,16 +923,19 @@ private final class StatusMenuRowHostingView<Content: View>: NSHostingView<Conte
     private let highlightState: StatusMenuHighlightState
     private let rowAccessibilityLabel: String
     private let onClick: (() -> Void)?
+    private let onSecondaryClick: (() -> Void)?
 
     init(
         rootView: Content,
         highlightState: StatusMenuHighlightState,
         accessibilityLabel: String,
+        onSecondaryClick: (() -> Void)? = nil,
         onClick: (() -> Void)?
     ) {
         self.highlightState = highlightState
         rowAccessibilityLabel = accessibilityLabel
         self.onClick = onClick
+        self.onSecondaryClick = onSecondaryClick
         super.init(rootView: rootView)
     }
 
@@ -854,6 +943,7 @@ private final class StatusMenuRowHostingView<Content: View>: NSHostingView<Conte
         highlightState = StatusMenuHighlightState()
         rowAccessibilityLabel = "Pull request"
         onClick = nil
+        onSecondaryClick = nil
         super.init(rootView: rootView)
     }
 
@@ -876,6 +966,11 @@ private final class StatusMenuRowHostingView<Content: View>: NSHostingView<Conte
             return
         }
         onClick()
+    }
+
+    override func rightMouseUp(with event: NSEvent) {
+        if let onSecondaryClick { onSecondaryClick() }
+        else { super.rightMouseUp(with: event) }
     }
 
     override func accessibilityRole() -> NSAccessibility.Role? {
@@ -904,6 +999,8 @@ private final class StatusMenuRowHostingView<Content: View>: NSHostingView<Conte
 private struct StatusMenuPullRequestRow: View {
     let pullRequest: PullRequestPresentation
     @ObservedObject var highlightState: StatusMenuHighlightState
+    let boardLabel: String
+    let hasSession: Bool
     let stackMembershipCount: StatusMenuStackMembershipCount?
     let stackMemberSection: StatusMenuSection?
     let showsDisclosure: Bool
@@ -917,6 +1014,17 @@ private struct StatusMenuPullRequestRow: View {
                 .truncationMode(.tail)
                 .layoutPriority(1)
             Spacer(minLength: 4)
+            if !boardLabel.isEmpty {
+                Text(boardLabel)
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(highlightState.isHighlighted ? Color.white : Color.orange)
+                    .lineLimit(1)
+            }
+            if hasSession {
+                Image(systemName: "terminal")
+                    .font(.system(size: 9))
+                    .foregroundStyle(highlightState.isHighlighted ? Color.white : Color.secondary)
+            }
             if let stackMemberSection {
                 let display = stackMemberSection.stackMemberDisplay
                 Text(display.title)
@@ -962,7 +1070,6 @@ private struct StatusMenuPullRequestRow: View {
             }
         }
         .contentShape(Rectangle())
-        .environment(\.colorScheme, .dark)
     }
 }
 
@@ -996,7 +1103,6 @@ private struct StatusMenuActionRow: View {
             }
         }
         .contentShape(Rectangle())
-        .environment(\.colorScheme, .dark)
     }
 }
 
@@ -1013,7 +1119,6 @@ private struct StatusMenuShortcutHintRow: View {
         .font(.system(size: 11))
         .foregroundStyle(.tertiary)
         .padding(.horizontal, 18)
-        .environment(\.colorScheme, .dark)
     }
 }
 
@@ -1027,7 +1132,7 @@ private struct StatusMenuAuthorAvatar: View {
         )
         .frame(width: 16, height: 16)
         .clipShape(Circle())
-        .overlay { Circle().stroke(.black.opacity(0.45), lineWidth: 1) }
+        .overlay { Circle().stroke(Color.primary.opacity(0.25), lineWidth: 1) }
         .help(author.map { "Author: \($0.displayName)" } ?? "Author unavailable")
         .accessibilityHidden(true)
     }
@@ -1046,7 +1151,7 @@ private struct StatusMenuRepositoryFilter: View {
                 filterButton("Pinned \(pinnedCount)", filter: .pinned)
             }
             .padding(3)
-            .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 7))
+            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 7))
 
             Spacer()
 
@@ -1059,7 +1164,6 @@ private struct StatusMenuRepositoryFilter: View {
             .help("Manage pinned repositories in Settings")
         }
         .padding(.horizontal, 11)
-        .environment(\.colorScheme, .dark)
     }
 
     private func filterButton(_ title: String, filter: RepositoryScope) -> some View {

@@ -4,7 +4,6 @@
 
 ### Review at scale, from your menu bar.
 
-[![Latest release](https://img.shields.io/github/v/release/FranciscoMoretti/GitHubBar?style=flat-square&label=release&color=2f81f7)](https://github.com/FranciscoMoretti/GitHubBar/releases/latest)
 [![macOS 14+](https://img.shields.io/badge/macOS-14%2B-0d1117?style=flat-square&logo=apple&logoColor=white)](https://github.com/FranciscoMoretti/GitHubBar/releases)
 [![Swift 6](https://img.shields.io/badge/Swift-6-F05138?style=flat-square&logo=swift&logoColor=white)](https://www.swift.org/)
 
@@ -12,9 +11,24 @@
 
 **The number in your menu bar is your review queue.** Open GitHubBar to see review requests and your own pull requests across the repositories that matter on this Mac.
 
-[Download GitHubBar](https://github.com/FranciscoMoretti/GitHubBar/releases) · [Report an issue](https://github.com/FranciscoMoretti/GitHubBar/issues)
+[Build this fork](#build-from-source) · [Report an issue](https://github.com/nikovert/GitHubBar/issues)
 
 </div>
+
+> This is a development fork of
+> [FranciscoMoretti/GitHubBar](https://github.com/FranciscoMoretti/GitHubBar).
+> Upstream releases do **not** include the workspace board or agent-session features below.
+
+## Workspace additions in this fork
+
+- Follow macOS appearance or choose Light or Dark in Settings.
+- Keep local priority, status tags, and agent notes for each PR or stack. PRs inherit stack
+  values until overridden. The board is stored only on this Mac.
+- Create a new Codex or Claude worktree/tmux session, or pin an existing one.
+- Select a PR with a running pinned agent from the menu to jump into its tmux session.
+  Right-click a PR to edit its board entry, or open **Workspace Board…** from the menu.
+- Let local agents update the board with the `GitHubBarWorkspaceCLI` command. See
+  [Agent workspace guide](docs/agent-workspace.md).
 
 ## Built for review at scale
 
@@ -28,6 +42,9 @@
 GitHubBar reconciles the full account workload in the background, keeps the latest useful snapshot available, and applies repository scope locally—switching views does not trigger another GitHub request.
 
 ## Install
+
+The release linked below is the **upstream** app. To use this fork's additions, build this
+repository from source using full Xcode and XcodeGen.
 
 1. Install and sign in to [GitHub CLI](https://cli.github.com/):
 
@@ -55,11 +72,16 @@ GitHubBar uses your existing GitHub CLI login. Tokens stay in memory, preference
 
 ## Build from source
 
-```sh
-brew install xcodegen gh
+```bash
+brew install xcodegen gh tmux
 scripts/generate-project.sh
 open GitHubBar.xcodeproj
 ```
+
+Build and run the `GitHubBar` scheme in Xcode. Install and authenticate `gh`, then set a
+local checkout and worktree root in **Workspace Board… → Workspace setup** before launching
+an agent. Install `codex` or `claude` on your `PATH`. macOS will ask permission to automate
+Terminal the first time you jump to a pinned tmux session.
 
 Run `scripts/check.sh` before submitting a pull request. Release details are in the [stable release runbook](docs/releases/stable-release-runbook.md) and [validation guide](docs/releases/validation-release.md).
 

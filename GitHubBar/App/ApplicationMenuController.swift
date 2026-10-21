@@ -25,6 +25,9 @@ final class ApplicationMenuController: NSObject {
             NSMenuItem(title: "Refresh", action: #selector(refresh), keyEquivalent: "r")
         )
         applicationMenu.addItem(
+            NSMenuItem(title: "Workspace Board…", action: #selector(showWorkspace), keyEquivalent: "b")
+        )
+        applicationMenu.addItem(
             NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: ",")
         )
         applicationMenu.addItem(.separator())
@@ -46,6 +49,10 @@ final class ApplicationMenuController: NSObject {
 
     @objc private func showSettings() {
         actions.openSettings()
+    }
+
+    @objc private func showWorkspace() {
+        actions.openWorkspace(nil)
     }
 
     @objc private func showAbout() {

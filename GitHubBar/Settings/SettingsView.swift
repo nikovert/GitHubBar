@@ -3,6 +3,7 @@ import GitHubBarCore
 import SwiftUI
 
 struct SettingsView: View {
+    @AppStorage(AppearanceController.defaultsKey) private var appearance = AppearancePreference.system.rawValue
     @Bindable var appModel: AppModel
     @Bindable var updateModel: UpdateModel
 
@@ -40,6 +41,18 @@ struct SettingsView: View {
 
                 SettingsSection(title: "General", systemImage: "gearshape") {
                     SettingsLabeledRow(
+                        title: "Appearance",
+                        detail: "Follow macOS or choose a theme for GitHubBar."
+                    ) {
+                        Picker("Appearance", selection: $appearance) {
+                            ForEach(AppearancePreference.allCases, id: \.self) { preference in
+                                Text(preference.displayName).tag(preference.rawValue)
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(width: 165)
+                    }
+                    SettingsLabeledRow(
                         title: "Launch at login",
                         detail: launchAtLoginDetail
                     ) {
@@ -70,7 +83,7 @@ struct SettingsView: View {
                                 .settingsDetail()
                         }
                         Spacer()
-                        Link("Project", destination: URL(string: "https://github.com/FranciscoMoretti/GitHubBar")!)
+                        Link("Project", destination: URL(string: "https://github.com/nikovert/GitHubBar")!)
                         Link("Support", destination: URL(string: "https://github.com/FranciscoMoretti/GitHubBar/issues")!)
                     }
                     .controlSize(.small)
@@ -80,6 +93,9 @@ struct SettingsView: View {
         }
         .frame(minWidth: 620, minHeight: 650)
         .background(Color(nsColor: .windowBackgroundColor))
+        .onChange(of: appearance) { _, newValue in
+            AppearanceController.apply(AppearancePreference(rawValue: newValue) ?? .system)
+        }
     }
 
     private var refreshCadenceBinding: Binding<RefreshCadence> {

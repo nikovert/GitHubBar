@@ -8,6 +8,7 @@ let package = Package(
     products: [
         .library(name: "GitHubBarCore", targets: ["GitHubBarCore"]),
         .executable(name: "GitHubBarCoreChecks", targets: ["GitHubBarCoreChecks"]),
+        .executable(name: "GitHubBarWorkspaceCLI", targets: ["GitHubBarWorkspaceCLI"]),
     ],
     targets: [
         .target(name: "GitHubBarCore"),
@@ -15,6 +16,11 @@ let package = Package(
             name: "GitHubBarCoreChecks",
             dependencies: ["GitHubBarCore"],
             path: "Checks/GitHubBarCoreChecks"
+        ),
+        .executableTarget(
+            name: "GitHubBarWorkspaceCLI",
+            dependencies: ["GitHubBarCore"],
+            path: "CLI/GitHubBarWorkspaceCLI"
         ),
         .testTarget(
             name: "GitHubBarCoreTests",

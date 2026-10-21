@@ -60,8 +60,8 @@ struct AccountConnectionView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 7))
-                    .overlay { RoundedRectangle(cornerRadius: 7).stroke(.white.opacity(0.1)) }
+                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 7))
+                    .overlay { RoundedRectangle(cornerRadius: 7).stroke(Color.primary.opacity(0.1)) }
                     .accessibilityLabel("Monitor @\(candidate.login) on \(candidate.hostname)")
                 }
             }
@@ -90,8 +90,8 @@ struct AccountConnectionView: View {
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(9)
-                .background(.black.opacity(0.2), in: RoundedRectangle(cornerRadius: 6))
-                .overlay { RoundedRectangle(cornerRadius: 6).stroke(.white.opacity(0.1)) }
+                .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 6))
+                .overlay { RoundedRectangle(cornerRadius: 6).stroke(Color.primary.opacity(0.1)) }
                 .padding(.top, 14)
                 .accessibilityLabel("Recovery command: \(command)")
         }
@@ -151,8 +151,8 @@ private extension View {
         font(.system(size: 20))
             .foregroundStyle(.secondary)
             .frame(width: 38, height: 38)
-            .background(.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 10))
-            .overlay { RoundedRectangle(cornerRadius: 10).stroke(.white.opacity(0.14)) }
+            .background(Color.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 10))
+            .overlay { RoundedRectangle(cornerRadius: 10).stroke(Color.primary.opacity(0.14)) }
             .padding(.bottom, 13)
     }
 

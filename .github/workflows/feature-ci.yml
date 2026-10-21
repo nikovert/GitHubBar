@@ -1,0 +1,25 @@
+name: Feature build
+
+on:
+  push:
+    branches:
+      - feat/agent-workspace
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Check core and app sources
+        run: scripts/check.sh
+      - name: Build macOS app
+        run: >-
+          xcodebuild -project GitHubBar.xcodeproj
+          -scheme GitHubBar -configuration Debug
+          -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO build

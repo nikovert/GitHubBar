@@ -5,6 +5,7 @@ import GitHubBarCore
 final class StatusItemController: NSObject {
     let appModel: AppModel
     let actions: AppActions
+    let workspaceModel: WorkspaceModel
     let avatarImageCache: AvatarImageCache
     let statusItem: NSStatusItem
     let statusMenu = NSMenu()
@@ -18,10 +19,12 @@ final class StatusItemController: NSObject {
     init(
         appModel: AppModel,
         actions: AppActions = AppActions(),
+        workspaceModel: WorkspaceModel,
         avatarImageCache: AvatarImageCache
     ) {
         self.appModel = appModel
         self.actions = actions
+        self.workspaceModel = workspaceModel
         self.avatarImageCache = avatarImageCache
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         super.init()
