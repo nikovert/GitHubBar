@@ -44,7 +44,11 @@ public actor AgentSessionManager {
             environment: [:]
         )
         guard origin.exitCode == 0 else {
-            throw AgentSessionLaunchError.commandFailed(origin.standardError)
+            throw AgentSessionLaunchError.commandFailed(
+                origin.standardError.isEmpty
+                    ? "Could not read the checkout's origin remote."
+                    : origin.standardError
+            )
         }
         guard Self.repositoryNameWithOwner(fromRemoteURL: origin.standardOutput)
             == subject.key.repositoryNameWithOwner else {

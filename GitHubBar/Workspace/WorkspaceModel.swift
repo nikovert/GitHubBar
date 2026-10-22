@@ -2,6 +2,22 @@ import AppKit
 import GitHubBarCore
 import Observation
 
+private enum WorkspaceAction: Hashable {
+    case priority(BoardSubject)
+    case tag(BoardSubject, String)
+    case note(BoardSubject)
+    case checkout(String)
+    case worktreeRoot
+    case saveTag(String)
+    case launch(BoardSubject, AgentKind)
+    case pin(BoardSubject, AgentKind)
+    case stop(UUID)
+    case restart(UUID)
+    case unlink(UUID)
+    case removeWorktree(UUID)
+    case focus(UUID)
+}
+
 @MainActor
 @Observable
 final class WorkspaceModel {
@@ -12,6 +28,7 @@ final class WorkspaceModel {
     @ObservationIgnored private let store: LocalWorkspaceStore
     @ObservationIgnored private let sessions: AgentSessionManager
     @ObservationIgnored private var pollingTask: Task<Void, Never>?
+    @ObservationIgnored private var failedAction: WorkspaceAction?
     @ObservationIgnored var onDocumentChange: (() -> Void)?
 
     init(store: LocalWorkspaceStore, sessions: AgentSessionManager) {
@@ -43,16 +60,18 @@ final class WorkspaceModel {
                 onDocumentChange?()
             }
         } catch {
-            errorMessage = "Could not read the local workspace: \(error.localizedDescription)"
+            if errorMessage == nil {
+                errorMessage = "Could not read the local workspace: \(error.localizedDescription)"
+            }
         }
     }
 
     func setPriority(_ priority: BoardPriority, for subject: BoardSubject) {
-        updateEntry(subject) { $0.priority = priority }
+        updateEntry(subject, action: .priority(subject)) { $0.priority = priority }
     }
 
     func setTag(_ id: String, enabled: Bool, currentIDs: Set<String>, for subject: BoardSubject) {
-        updateEntry(subject) { entry in
+        updateEntry(subject, action: .tag(subject, id)) { entry in
             var tags = entry.tagIDs ?? currentIDs
             if enabled { tags.insert(id) } else { tags.remove(id) }
             entry.tagIDs = tags
@@ -60,14 +79,15 @@ final class WorkspaceModel {
     }
 
     func setNote(_ note: String, for subject: BoardSubject) {
-        updateEntry(subject) { $0.note = note }
+        updateEntry(subject, action: .note(subject)) { $0.note = note }
     }
 
     private func updateEntry(
         _ subject: BoardSubject,
+        action: WorkspaceAction,
         edit: @escaping @Sendable (inout BoardEntry) -> Void
     ) {
-        perform { [store] in
+        perform(action) { [store] in
             _ = try await store.update { document in
                 var entry = document.entry(for: subject) ?? BoardEntry(subject: subject)
                 edit(&entry)
@@ -79,19 +99,19 @@ final class WorkspaceModel {
     }
 
     func saveCheckout(_ path: String, for repository: String) {
-        perform { [store] in
+        perform(.checkout(repository)) { [store] in
             _ = try await store.update { $0.configuration.repositoryCheckouts[repository] = path }
         }
     }
 
     func saveWorktreeRoot(_ path: String) {
-        perform { [store] in
+        perform(.worktreeRoot) { [store] in
             _ = try await store.update { $0.configuration.worktreeRoot = path }
         }
     }
 
     func saveTag(_ tag: BoardTag) {
-        perform { [store] in _ = try await store.update { $0.setTag(tag) } }
+        perform(.saveTag(tag.id)) { [store] in _ = try await store.update { $0.setTag(tag) } }
     }
 
     func createTag(name: String, color: BoardTagColor) {
@@ -102,11 +122,13 @@ final class WorkspaceModel {
     }
 
     func launch(_ agent: AgentKind, for subject: BoardSubject) {
-        perform { [sessions] in _ = try await sessions.launch(subject: subject, agent: agent) }
+        perform(.launch(subject, agent)) { [sessions] in
+            _ = try await sessions.launch(subject: subject, agent: agent)
+        }
     }
 
     func pin(_ agent: AgentKind, for subject: BoardSubject, path: String, tmuxName: String?) {
-        perform { [sessions] in
+        perform(.pin(subject, agent)) { [sessions] in
             _ = try await sessions.pinExisting(
                 subject: subject, agent: agent, worktreePath: path,
                 tmuxSessionName: tmuxName?.isEmpty == true ? nil : tmuxName
@@ -115,37 +137,53 @@ final class WorkspaceModel {
     }
 
     func stopSession(_ id: UUID) {
-        perform { [sessions] in try await sessions.stop(id: id) }
+        perform(.stop(id)) { [sessions] in try await sessions.stop(id: id) }
     }
 
     func restartSession(_ id: UUID) {
-        perform { [sessions] in _ = try await sessions.restart(id: id) }
+        perform(.restart(id)) { [sessions] in _ = try await sessions.restart(id: id) }
     }
 
     func unlinkSession(_ id: UUID) {
-        perform { [sessions] in try await sessions.unlink(id: id) }
+        perform(.unlink(id)) { [sessions] in try await sessions.unlink(id: id) }
     }
 
     func removeWorktree(_ id: UUID) {
-        perform { [sessions] in try await sessions.removeManagedWorktree(id: id) }
+        perform(.removeWorktree(id)) { [sessions] in
+            try await sessions.removeManagedWorktree(id: id)
+        }
     }
 
     func focus(_ session: AgentSessionLink) {
+        let action = WorkspaceAction.focus(session.id)
+        beginAttempt(action)
         do {
             try TerminalSessionOpener.open(session)
         } catch {
             errorMessage = "Could not open Terminal: \(error.localizedDescription)"
+            failedAction = action
         }
     }
 
-    private func perform(_ operation: @escaping @Sendable () async throws -> Void) {
+    private func beginAttempt(_ action: WorkspaceAction) {
+        if failedAction == action {
+            errorMessage = nil
+            failedAction = nil
+        }
+    }
+
+    private func perform(
+        _ action: WorkspaceAction,
+        operation: @escaping @Sendable () async throws -> Void
+    ) {
+        beginAttempt(action)
         Task {
             do {
                 try await operation()
-                errorMessage = nil
                 await reload()
             } catch {
                 errorMessage = error.localizedDescription
+                failedAction = action
             }
         }
     }

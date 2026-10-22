@@ -1,10 +1,21 @@
 import Darwin
 import Foundation
 
-public enum LocalWorkspaceStoreError: Error, Sendable {
+public enum LocalWorkspaceStoreError: Error, LocalizedError, Sendable {
     case corrupt
     case incompatibleVersion
     case lockUnavailable
+
+    public var errorDescription: String? {
+        switch self {
+        case .corrupt:
+            "Local workspace data is invalid. Back up workspace.json before repairing it."
+        case .incompatibleVersion:
+            "This workspace file uses an unsupported format. Update GitHubBar or restore a compatible backup."
+        case .lockUnavailable:
+            "Could not lock the local workspace. Check its folder permissions and try again."
+        }
+    }
 }
 
 public actor LocalWorkspaceStore {
