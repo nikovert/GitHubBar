@@ -53,7 +53,20 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "74C204BD8752C53AECD260EE"
+               BuildableName = "GitHubBarTests.xctest"
+               BlueprintName = "GitHubBarTests"
+               ReferencedContainer = "container:GitHubBar.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"

@@ -18,8 +18,10 @@ jobs:
         run: brew install xcodegen ripgrep
       - name: Check core and app sources
         run: scripts/check.sh
-      - name: Build macOS app
+      - name: Test core package
+        run: swift test --package-path Packages/GitHubBarCore --parallel
+      - name: Build and test macOS app
         run: >-
-          xcodebuild -project GitHubBar.xcodeproj
+          xcodebuild test -project GitHubBar.xcodeproj
           -scheme GitHubBar -configuration Debug
-          -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO build
+          -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO

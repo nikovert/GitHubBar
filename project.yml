@@ -73,5 +73,9 @@ schemes:
         GitHubBarTests: [test]
     run:
       config: Debug
+    test:
+      config: Debug
+      targets:
+        - GitHubBarTests
     archive:
       config: Stable
