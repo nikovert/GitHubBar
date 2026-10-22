@@ -69,6 +69,9 @@ include the workspace board or agent sessions.
 3. Unzip GitHubBar and move it to **Applications**.
 
 This validation build is ad-hoc signed, not Apple-notarized, and does not update itself.
+Use **Settings → Updates → Download Updates…** to open this fork's releases, download
+the newest ZIP and checksum, then quit GitHubBar and replace it in Applications.
+Signed stable builds retain Sparkle's **Check for Updates** flow.
 On first launch, macOS may block it: try opening GitHubBar once, then choose **Open
 Anyway** under **System Settings → Privacy & Security** after verifying the checksum.
 Its `com.nikovert.githubbar` bundle ID is separate from the upstream app.

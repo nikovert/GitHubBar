@@ -1,8 +1,8 @@
-import Foundation
+import AppKit
 import Observation
 
 enum UpdatePresentation: Equatable {
-    case disabled(message: String)
+    case manualDownload
     case ready
     case checking
     case failed(message: String)
@@ -12,19 +12,30 @@ enum UpdatePresentation: Equatable {
 protocol UpdateControlling: AnyObject {
     var presentation: UpdatePresentation { get }
     var canCheckForUpdates: Bool { get }
+    var actionTitle: String { get }
     var onStateChange: ((UpdatePresentation, Bool) -> Void)? { get set }
     func checkForUpdates()
 }
 
 @MainActor
-final class DisabledUpdateController: UpdateControlling {
-    let presentation: UpdatePresentation = .disabled(
-        message: "Automatic updates are disabled in this validation build."
-    )
-    let canCheckForUpdates = false
+final class ManualDownloadUpdateController: UpdateControlling {
+    private static let releasesURL = URL(string: "https://github.com/nikovert/GitHubBar/releases")!
+    private let openURL: (URL) -> Bool
+    private(set) var presentation: UpdatePresentation = .manualDownload
+    let canCheckForUpdates = true
+    let actionTitle = "Download Updates…"
     var onStateChange: ((UpdatePresentation, Bool) -> Void)?
 
-    func checkForUpdates() {}
+    init(openURL: @escaping (URL) -> Bool = { NSWorkspace.shared.open($0) }) {
+        self.openURL = openURL
+    }
+
+    func checkForUpdates() {
+        presentation = openURL(Self.releasesURL) ? .manualDownload : .failed(
+            message: "Could not open your browser. Visit \(Self.releasesURL.absoluteString) to download updates."
+        )
+        onStateChange?(presentation, canCheckForUpdates)
+    }
 }
 
 @MainActor
@@ -33,6 +44,8 @@ final class UpdateModel {
     private(set) var presentation: UpdatePresentation
     private(set) var canCheckForUpdates: Bool
     @ObservationIgnored private let controller: any UpdateControlling
+
+    var actionTitle: String { controller.actionTitle }
 
     init(controller: any UpdateControlling) {
         self.controller = controller
@@ -63,6 +76,6 @@ enum UpdateControllerFactory {
             return SparkleUpdateController()
         }
         #endif
-        return DisabledUpdateController()
+        return ManualDownloadUpdateController()
     }
 }

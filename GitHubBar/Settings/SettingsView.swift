@@ -212,16 +212,15 @@ private struct UpdateSettingsContent: View {
 
     var body: some View {
         SettingsLabeledRow(title: title, detail: detail) {
-            if updateModel.canCheckForUpdates {
-                Button("Check for Updates") { updateModel.checkForUpdates() }
-                    .controlSize(.small)
-            }
+            Button(updateModel.actionTitle) { updateModel.checkForUpdates() }
+                .controlSize(.small)
+                .disabled(!updateModel.canCheckForUpdates)
         }
     }
 
     private var title: String {
         switch updateModel.presentation {
-        case .disabled: "Updates unavailable"
+        case .manualDownload: "Download the latest build"
         case .ready: "Automatic updates"
         case .checking: "Checking for updates…"
         case .failed: "Update check failed"
@@ -230,7 +229,9 @@ private struct UpdateSettingsContent: View {
 
     private var detail: String {
         switch updateModel.presentation {
-        case let .disabled(message), let .failed(message): message
+        case let .failed(message): message
+        case .manualDownload:
+            "Opens this fork’s GitHub releases in your browser. Download the newest ZIP, quit GitHubBar, and replace it in Applications. This build does not install updates automatically."
         case .ready: "GitHubBar checks for signed updates in the background."
         case .checking: "Contacting the update service."
         }

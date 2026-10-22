@@ -3,6 +3,7 @@ import Sparkle
 
 @MainActor
 final class SparkleUpdateController: NSObject, UpdateControlling, SPUUpdaterDelegate {
+    let actionTitle = "Check for Updates"
     private(set) var presentation: UpdatePresentation = .ready {
         didSet { publish() }
     }
