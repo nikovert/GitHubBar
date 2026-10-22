@@ -11,8 +11,9 @@ JSON file directly while GitHubBar is running.
 Build this fork with full Xcode, then open **Workspace Board…** in the menu.
 Under **Workspace setup**, provide an absolute path to the local checkout for each
 repository and an absolute worktree root outside those checkouts. New worktrees fetch
-`pull/NUMBER/head` from the checkout's `origin` remote. Make sure `origin` points at the
-GitHub repository that owns the PR; a fork-only `origin` may not expose its PR refs.
+`pull/NUMBER/head` from the checkout's `origin` remote. GitHubBar refuses to launch
+unless `origin` points at the GitHub repository that owns the PR. A fork-only `origin`
+may not expose its PR refs.
 
 Install tmux and either or both agent CLIs:
 

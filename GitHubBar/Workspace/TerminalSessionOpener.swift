@@ -19,7 +19,7 @@ enum TerminalSessionOpener {
             guard let tmuxURL = AgentSessionManager.findExecutable("tmux") else {
                 throw Error.failed("tmux is not installed")
             }
-            command = "\(shellQuote(tmuxURL.path)) attach-session -t \(shellQuote(name))"
+            command = "\(shellQuote(tmuxURL.path)) attach-session -t \(shellQuote("=\(name)"))"
         } else {
             command = "cd \(shellQuote(session.worktreePath))"
         }

@@ -5,6 +5,7 @@ public enum AgentSessionLaunchError: Error, LocalizedError, Sendable {
     case missingCheckout
     case missingExecutable(String)
     case commandFailed(String)
+    case wrongRepositoryRemote(String)
     case unmanagedWorktree
     case dirtyWorktree
 
@@ -14,6 +15,8 @@ public enum AgentSessionLaunchError: Error, LocalizedError, Sendable {
         case .missingCheckout: "Configure an existing local checkout for this repository."
         case let .missingExecutable(name): "Could not find \(name) in PATH or common install locations."
         case let .commandFailed(message): message
+        case let .wrongRepositoryRemote(repository):
+            "The checkout's origin must point to \(repository) on github.com."
         case .unmanagedWorktree: "Only GitHubBar-created worktrees can be removed here."
         case .dirtyWorktree: "The worktree has local changes and cannot be removed."
         }
@@ -58,18 +61,21 @@ public struct AgentSessionLaunchPlan: Sendable {
     }
 
     public var gitFetchArguments: [String] {
-        ["-C", checkoutPath, "fetch", "origin", "pull/\(subject.key.number)/head"]
+        ["-C", checkoutPath, "fetch", "origin",
+         "refs/pull/\(subject.key.number)/head:refs/heads/\(branchName)"]
     }
 
     public var gitWorktreeArguments: [String] {
-        ["-C", checkoutPath, "worktree", "add", "-b",
-         "githubbar/pr-\(subject.key.number)-\(String(id.uuidString.prefix(8)).lowercased())",
-         worktreePath, "FETCH_HEAD"]
+        ["-C", checkoutPath, "worktree", "add", worktreePath, branchName]
     }
 
     public var tmuxArguments: [String] {
         ["new-session", "-d", "-s", tmuxSessionName, "-c", worktreePath,
          "exec \(Self.shellQuote(agentExecutablePath))"]
+    }
+
+    private var branchName: String {
+        "githubbar/pr-\(subject.key.number)-\(id.uuidString.lowercased())"
     }
 
     private static func shellQuote(_ value: String) -> String {

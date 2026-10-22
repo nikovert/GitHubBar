@@ -35,7 +35,13 @@ enum LocalWorkspaceChecks {
             )
             check(launchPlan.worktreePath.hasPrefix("/tmp/worktrees/"), "Worktree stays under configured root", &failures)
             check(launchPlan.tmuxSessionName.hasPrefix("githubbar-"), "tmux name is namespaced", &failures)
-            check(launchPlan.gitFetchArguments == ["-C", "/tmp/widget", "fetch", "origin", "pull/12/head"], "Launch fetches GitHub PR head", &failures)
+            check(
+                launchPlan.gitFetchArguments == [
+                    "-C", "/tmp/widget", "fetch", "origin",
+                    "refs/pull/12/head:refs/heads/githubbar/pr-12-00000000-0000-0000-0000-000000000012",
+                ],
+                "Launch fetches the PR head into its own branch", &failures
+            )
             check(launchPlan.tmuxArguments.contains("exec '/opt/homebrew/bin/codex'"), "Launch starts selected agent", &failures)
             let root = try PullRequestKey(url: URL(string: "https://github.com/acme/widget/pull/12")!)
             let child = try PullRequestKey(url: URL(string: "https://github.com/acme/widget/pull/13")!)
@@ -124,8 +130,15 @@ enum LocalWorkspaceChecks {
             check(launched.managedWorktree, "Launched session owns its worktree", &failures)
             check(launched.state == .running, "Launched session is running", &failures)
             let calls = await runner.calls
-            check(calls.count == 3, "Launch fetches, creates worktree, starts tmux", &failures)
-            check(calls[0].arguments == ["-C", checkout.path, "fetch", "origin", "pull/12/head"], "Launch fetches requested PR", &failures)
+            check(calls.count == 4, "Launch checks origin, fetches, creates worktree, starts tmux", &failures)
+            check(calls[0].arguments == ["-C", checkout.path, "remote", "get-url", "origin"], "Launch verifies checkout origin", &failures)
+            check(
+                calls[1].arguments.starts(with: ["-C", checkout.path, "fetch", "origin"])
+                    && calls[1].arguments.last?.hasPrefix(
+                        "refs/pull/12/head:refs/heads/githubbar/pr-12-"
+                    ) == true,
+                "Launch fetches requested PR", &failures
+            )
             await runner.setSessionExists(false)
             let vanished = try await manager.refreshStates()
             check(vanished[0].state == .stopped, "Exited tmux session is reflected in board", &failures)
@@ -172,10 +185,13 @@ private actor SessionCheckCommandRunner: CommandRunning {
 
     func run(executableURL: URL, arguments: [String], environment: [String: String]) async -> CommandResult {
         calls.append(Call(arguments: arguments))
+        if arguments.suffix(3) == ["remote", "get-url", "origin"] {
+            return CommandResult(exitCode: 0, standardOutput: "git@github.com:acme/widget.git\n", standardError: "")
+        }
         if arguments.first == "has-session" {
             return CommandResult(exitCode: sessionExists ? 0 : 1, standardOutput: "", standardError: "")
         }
-        if arguments.suffix(3) == ["status", "--porcelain", "--ignored"] {
+        if arguments.suffix(4) == ["status", "--porcelain", "--ignored", "--untracked-files=all"] {
             return CommandResult(exitCode: 0, standardOutput: isDirty ? " M file.swift\n" : "", standardError: "")
         }
         return CommandResult(exitCode: 0, standardOutput: "", standardError: "")

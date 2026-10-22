@@ -22,6 +22,21 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install check tools
+        run: brew install xcodegen ripgrep
+
+      - name: Check core and app sources
+        run: scripts/check.sh
+
+      - name: Test core package
+        run: swift test --package-path Packages/GitHubBarCore --parallel
+
+      - name: Build and test macOS app
+        run: >-
+          xcodebuild test -project GitHubBar.xcodeproj
+          -scheme GitHubBar -configuration Debug
+          -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO
+
       - name: Resolve validation version
         id: release
         shell: bash
@@ -39,6 +54,19 @@ jobs:
         env:
           GITHUBBAR_VERSION: ${{ steps.release.outputs.version }}
         run: scripts/package-validation.sh
+
+      - name: Verify fork download
+        shell: bash
+        run: |
+          set -euo pipefail
+          app=".build/validation/GitHubBar.app"
+          test "$(plutil -extract CFBundleIdentifier raw "$app/Contents/Info.plist")" = "com.nikovert.githubbar"
+          lipo "$app/Contents/MacOS/GitHubBar" -verify_arch arm64
+          lipo "$app/Contents/MacOS/GitHubBar" -verify_arch x86_64
+          codesign --verify --deep --strict "$app"
+          cd dist
+          shasum -a 256 -c GitHubBar-validation-*.zip.sha256
+          unzip -t GitHubBar-validation-*.zip >/dev/null
 
       - name: Create GitHub prerelease
         env:

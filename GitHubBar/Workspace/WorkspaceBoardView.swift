@@ -212,7 +212,7 @@ private struct WorkspaceDetailView: View {
                             TextField("Absolute worktree root", text: $worktreeRoot)
                             Button("Save root") { workspace.saveWorktreeRoot(worktreeRoot) }
                         }
-                        Text("New worktrees fetch PR heads from the checkout's origin remote.")
+                        Text("New worktrees require origin to match the PR repository.")
                             .font(.caption).foregroundStyle(.secondary)
                     }
                     .padding(.top, 8)

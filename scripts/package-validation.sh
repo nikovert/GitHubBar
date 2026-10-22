@@ -77,7 +77,7 @@ cp GitHubBar/Resources/Info.plist "$app_path/Contents/Info.plist"
 cp docs/releases/validation-release.md "$app_path/Contents/Resources/VALIDATION-README.md"
 
 plutil -replace CFBundleExecutable -string GitHubBar "$app_path/Contents/Info.plist"
-plutil -replace CFBundleIdentifier -string com.franciscomoretti.githubbar "$app_path/Contents/Info.plist"
+plutil -replace CFBundleIdentifier -string com.nikovert.githubbar "$app_path/Contents/Info.plist"
 plutil -replace CFBundleName -string GitHubBar "$app_path/Contents/Info.plist"
 plutil -replace CFBundleDisplayName -string GitHubBar "$app_path/Contents/Info.plist"
 plutil -replace CFBundleShortVersionString -string "$version" "$app_path/Contents/Info.plist"
@@ -90,7 +90,8 @@ plutil -remove SUPublicEDKey "$app_path/Contents/Info.plist"
 codesign --force --deep --sign - "$app_path"
 codesign --verify --deep --strict --verbose=2 "$app_path"
 plutil -lint "$app_path/Contents/Info.plist"
-lipo "$app_path/Contents/MacOS/GitHubBar" -verify_arch arm64 x86_64
+lipo "$app_path/Contents/MacOS/GitHubBar" -verify_arch arm64
+lipo "$app_path/Contents/MacOS/GitHubBar" -verify_arch x86_64
 
 if strings "$app_path/Contents/MacOS/GitHubBar" | rg -q "secret-test-token|fixture-token|test-token"; then
   print -u2 "Validation artifact contains a test credential marker."

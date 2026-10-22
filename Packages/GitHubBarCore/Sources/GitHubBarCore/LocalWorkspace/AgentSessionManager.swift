@@ -38,6 +38,20 @@ public actor AgentSessionManager {
             worktreeRoot: configuration.worktreeRoot,
             agentExecutablePath: agentURL.path
         )
+        let origin = await commandRunner.run(
+            executableURL: gitURL,
+            arguments: ["-C", checkoutPath, "remote", "get-url", "origin"],
+            environment: [:]
+        )
+        guard origin.exitCode == 0 else {
+            throw AgentSessionLaunchError.commandFailed(origin.standardError)
+        }
+        guard Self.repositoryNameWithOwner(fromRemoteURL: origin.standardOutput)
+            == subject.key.repositoryNameWithOwner else {
+            throw AgentSessionLaunchError.wrongRepositoryRemote(
+                subject.key.repositoryNameWithOwner
+            )
+        }
         try FileManager.default.createDirectory(
             atPath: configuration.worktreeRoot,
             withIntermediateDirectories: true
@@ -87,12 +101,13 @@ public actor AgentSessionManager {
 
     public func stop(id: UUID) async throws {
         let session = try await storedSession(id: id)
-        if let name = session.tmuxSessionName, let tmuxURL {
+        if let name = session.tmuxSessionName {
+            guard let tmuxURL else { throw AgentSessionLaunchError.missingExecutable("tmux") }
             let exists = await commandRunner.run(
-                executableURL: tmuxURL, arguments: ["has-session", "-t", name], environment: [:]
+                executableURL: tmuxURL, arguments: ["has-session", "-t", "=\(name)"], environment: [:]
             )
             if exists.exitCode == 0 {
-                try await run(tmuxURL, arguments: ["kill-session", "-t", name])
+                try await run(tmuxURL, arguments: ["kill-session", "-t", "=\(name)"])
             }
         }
         try await store.update { document in
@@ -116,7 +131,7 @@ public actor AgentSessionManager {
             throw AgentSessionLaunchError.missingExecutable(command)
         }
         let exists = await commandRunner.run(
-            executableURL: tmuxURL, arguments: ["has-session", "-t", name], environment: [:]
+            executableURL: tmuxURL, arguments: ["has-session", "-t", "=\(name)"], environment: [:]
         )
         if exists.exitCode != 0 {
             let script = "exec \(Self.shellQuote(agentURL.path))"
@@ -139,7 +154,7 @@ public actor AgentSessionManager {
         for index in sessions.indices {
             guard let name = sessions[index].tmuxSessionName else { continue }
             let result = await commandRunner.run(
-                executableURL: tmuxURL, arguments: ["has-session", "-t", name], environment: [:]
+                executableURL: tmuxURL, arguments: ["has-session", "-t", "=\(name)"], environment: [:]
             )
             let liveState: AgentSessionState = result.exitCode == 0 ? .running : .stopped
             if sessions[index].state != liveState {
@@ -173,13 +188,14 @@ public actor AgentSessionManager {
         let root = URL(fileURLWithPath: document.configuration.worktreeRoot).standardizedFileURL.path
         let path = URL(fileURLWithPath: session.worktreePath).standardizedFileURL.path
         guard path.hasPrefix(root + "/") else { throw AgentSessionLaunchError.unmanagedWorktree }
+        try await stop(id: id)
         let status = await commandRunner.run(
             executableURL: gitURL,
-            arguments: ["-C", path, "status", "--porcelain", "--ignored"], environment: [:]
+            arguments: ["-C", path, "status", "--porcelain", "--ignored", "--untracked-files=all"],
+            environment: [:]
         )
         guard status.exitCode == 0 else { throw AgentSessionLaunchError.commandFailed(status.standardError) }
         guard status.standardOutput.isEmpty else { throw AgentSessionLaunchError.dirtyWorktree }
-        try await stop(id: id)
         try await run(gitURL, arguments: ["-C", path, "worktree", "remove", path])
         try await unlink(id: id)
     }
@@ -218,5 +234,26 @@ public actor AgentSessionManager {
 
     private static func shellQuote(_ value: String) -> String {
         "'" + value.replacingOccurrences(of: "'", with: "'\\''") + "'"
+    }
+
+    private static func repositoryNameWithOwner(fromRemoteURL remoteURL: String) -> String? {
+        let remote = remoteURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        let path: String
+        if remote.hasPrefix("git@github.com:") {
+            path = String(remote.dropFirst("git@github.com:".count))
+        } else if let url = URLComponents(string: remote),
+                  url.host?.lowercased() == "github.com",
+                  (url.scheme == "https" && url.user == nil && (url.port == nil || url.port == 443))
+                    || (url.scheme == "ssh" && url.user == "git" && (url.port == nil || url.port == 22)),
+                  url.query == nil, url.fragment == nil {
+            path = url.path
+        } else {
+            return nil
+        }
+        let parts = path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            .split(separator: "/", omittingEmptySubsequences: false)
+        guard parts.count == 2, !parts[0].isEmpty, !parts[1].isEmpty else { return nil }
+        let repository = parts[1].hasSuffix(".git") ? parts[1].dropLast(4) : parts[1][...]
+        return "\(parts[0].lowercased())/\(repository.lowercased())"
     }
 }
