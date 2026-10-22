@@ -52,16 +52,26 @@ struct WorkspaceBoardView: View {
         .onAppear {
             if workspace.selectedSubject == nil { workspace.selectedSubject = subjects.first }
         }
-        .safeAreaInset(edge: .bottom) {
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             if let error = workspace.errorMessage {
-                HStack {
-                    Image(systemName: "exclamationmark.triangle")
-                    Text(error).lineLimit(2)
-                    Spacer()
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.red)
+                    ScrollView {
+                        Text(error)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .textSelection(.enabled)
+                    }
+                    .frame(maxHeight: 110)
                     Button("Dismiss") { workspace.errorMessage = nil }
                 }
-                .padding(10)
-                .background(Color.red.opacity(0.13))
+                .foregroundStyle(.primary)
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(nsColor: .windowBackgroundColor))
+                .overlay(alignment: .top) {
+                    Rectangle().fill(Color.red).frame(height: 2)
+                }
             }
         }
     }

@@ -3,6 +3,34 @@ import XCTest
 @testable import GitHubBarCore
 
 final class AgentSessionSafetyTests: XCTestCase {
+    func testMissingOriginReportsCommandFailureWhenGitWritesNoError() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("githubbar-origin-test-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let checkout = directory.appendingPathComponent("checkout")
+        try FileManager.default.createDirectory(at: checkout, withIntermediateDirectories: true)
+        let store = LocalWorkspaceStore(directoryURL: directory.appendingPathComponent("board"))
+        var document = LocalWorkspaceDocument.empty
+        document.configuration.repositoryCheckouts["acme/widget"] = checkout.path
+        document.configuration.worktreeRoot = directory.appendingPathComponent("worktrees").path
+        try await store.save(document)
+        let manager = AgentSessionManager(
+            store: store, commandRunner: SilentOriginFailureRunner(),
+            tmuxURL: URL(fileURLWithPath: "/usr/bin/true"),
+            agentURLs: [.codex: URL(fileURLWithPath: "/usr/bin/true")]
+        )
+        let subject = BoardSubject.pullRequest(try PullRequestKey(
+            url: URL(string: "https://github.com/acme/widget/pull/12")!
+        ))
+
+        do {
+            _ = try await manager.launch(subject: subject, agent: .codex)
+            XCTFail("A missing origin must not launch a worktree")
+        } catch {
+            XCTAssertTrue(error.localizedDescription.contains("origin"))
+        }
+    }
+
     func testLaunchRejectsCheckoutWhoseOriginIsAnotherRepository() async throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("githubbar-remote-test-\(UUID().uuidString)")
@@ -190,6 +218,20 @@ final class AgentSessionSafetyTests: XCTestCase {
         XCTAssertTrue(result.standardError.hasSuffix("50000\n"))
     }
 
+    func testProcessRunnerExposesHomebrewToGitHooksFromFinderPath() async throws {
+        let result = await ProcessCommandRunner().run(
+            executableURL: URL(fileURLWithPath: "/bin/sh"),
+            arguments: ["-c", "printf '%s' \"$PATH\""],
+            environment: ["PATH": "/usr/bin:/bin"]
+        )
+
+        XCTAssertEqual(result.exitCode, 0)
+        let directories = result.standardOutput.split(separator: ":").map(String.init)
+        XCTAssertEqual(Array(directories.prefix(2)), ["/usr/bin", "/bin"])
+        XCTAssertTrue(directories.contains("/opt/homebrew/bin"))
+        XCTAssertTrue(directories.contains("/usr/local/bin"))
+    }
+
     func testIgnoredFileBlocksWorktreeRemovalWhenGitHidesUntrackedFiles() async throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("githubbar-removal-test-\(UUID().uuidString)")
@@ -252,6 +294,14 @@ final class AgentSessionSafetyTests: XCTestCase {
             "-C", repository.path, "-c", "user.name=GitHubBar Tests",
             "-c", "user.email=githubbar@example.invalid", "commit", "-qm", "Fixture",
         ])
+    }
+}
+
+private actor SilentOriginFailureRunner: CommandRunning {
+    func run(
+        executableURL: URL, arguments: [String], environment: [String: String]
+    ) async -> CommandResult {
+        CommandResult(exitCode: 1, standardOutput: "", standardError: "")
     }
 }
 
