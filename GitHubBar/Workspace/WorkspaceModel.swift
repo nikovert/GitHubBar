@@ -42,7 +42,6 @@ final class WorkspaceModel {
                 document = loaded
                 onDocumentChange?()
             }
-            errorMessage = nil
         } catch {
             errorMessage = "Could not read the local workspace: \(error.localizedDescription)"
         }
@@ -143,6 +142,7 @@ final class WorkspaceModel {
         Task {
             do {
                 try await operation()
+                errorMessage = nil
                 await reload()
             } catch {
                 errorMessage = error.localizedDescription
