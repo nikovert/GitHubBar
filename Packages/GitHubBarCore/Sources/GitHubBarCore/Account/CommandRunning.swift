@@ -36,7 +36,18 @@ public actor ProcessCommandRunner: CommandRunning {
         process.arguments = arguments
         process.standardOutput = outputPipe
         process.standardError = errorPipe
-        process.environment = ProcessInfo.processInfo.environment.merging(environment) { _, supplied in supplied }
+        var childEnvironment = ProcessInfo.processInfo.environment.merging(environment) {
+            _, supplied in supplied
+        }
+        let path = childEnvironment["PATH"] ?? ""
+        let existingDirectories = Set(path.split(separator: ":").map(String.init))
+        let fallbackDirectories = [
+            "/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin", "/usr/sbin", "/sbin",
+        ].filter { !existingDirectories.contains($0) }
+        childEnvironment["PATH"] = ([path] + fallbackDirectories)
+            .filter { !$0.isEmpty }
+            .joined(separator: ":")
+        process.environment = childEnvironment
 
         do {
             try process.run()

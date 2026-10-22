@@ -190,6 +190,20 @@ final class AgentSessionSafetyTests: XCTestCase {
         XCTAssertTrue(result.standardError.hasSuffix("50000\n"))
     }
 
+    func testProcessRunnerExposesHomebrewToGitHooksFromFinderPath() async throws {
+        let result = await ProcessCommandRunner().run(
+            executableURL: URL(fileURLWithPath: "/bin/sh"),
+            arguments: ["-c", "printf '%s' \"$PATH\""],
+            environment: ["PATH": "/usr/bin:/bin"]
+        )
+
+        XCTAssertEqual(result.exitCode, 0)
+        let directories = result.standardOutput.split(separator: ":").map(String.init)
+        XCTAssertEqual(Array(directories.prefix(2)), ["/usr/bin", "/bin"])
+        XCTAssertTrue(directories.contains("/opt/homebrew/bin"))
+        XCTAssertTrue(directories.contains("/usr/local/bin"))
+    }
+
     func testIgnoredFileBlocksWorktreeRemovalWhenGitHidesUntrackedFiles() async throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("githubbar-removal-test-\(UUID().uuidString)")
