@@ -9,6 +9,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var settingsWindowController: SettingsWindowController?
     private var workspaceWindowController: WorkspaceWindowController?
     private var workspaceModel: WorkspaceModel?
+    private var reviewAgentModel: ReviewAgentModel?
+    private var searchModel: PRSearchModel?
+    private var searchWindowController: PRSearchWindowController?
     private var applicationMenuController: ApplicationMenuController?
     private var globalHotKeyController: GlobalHotKeyController?
     private var visualValidationWindow: NSWindow?
@@ -30,30 +33,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             launchAtLoginController: MacLaunchAtLoginController()
         )
         let model = AppModel(engine: engine)
+        let searchModel = PRSearchModel(service: CorePRSearchService())
+        let searchWindowController = PRSearchWindowController(model: searchModel)
         let workspaceStore = LocalWorkspaceStore()
+        let reviewStore = AgentReviewStore()
+        let reviewAgentModel = ReviewAgentModel(store: reviewStore)
         let workspaceModel = WorkspaceModel(
             store: workspaceStore,
-            sessions: AgentSessionManager(store: workspaceStore)
+            sessions: AgentSessionManager(store: workspaceStore),
+            reviewStore: reviewStore
         )
         let workspaceWindowController = WorkspaceWindowController(
             appModel: model, workspaceModel: workspaceModel
         )
         let settingsWindowController = SettingsWindowController(
             appModel: model,
-            updateController: UpdateControllerFactory.make()
+            updateController: UpdateControllerFactory.make(),
+            reviewAgentModel: reviewAgentModel,
+            workspaceModel: workspaceModel
         )
         let actions = AppActions(
             openSettings: { [weak settingsWindowController] in settingsWindowController?.show() },
             openAbout: { [weak settingsWindowController] in settingsWindowController?.showAbout() },
             openWorkspace: { [weak workspaceWindowController] subject in
                 workspaceWindowController?.show(subject: subject)
-            }
+            },
+            openSearch: { [weak searchWindowController] in searchWindowController?.show() }
         )
         let statusItemController = StatusItemController(
             appModel: model,
             actions: actions,
             workspaceModel: workspaceModel,
-            avatarImageCache: AvatarImageCache()
+            avatarImageCache: AvatarImageCache(),
+            searchModel: searchModel,
+            reviewAgentModel: reviewAgentModel
         )
         let applicationMenuController = ApplicationMenuController(appModel: model, actions: actions)
         applicationMenuController.install()
@@ -63,6 +76,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.settingsWindowController = settingsWindowController
         self.workspaceWindowController = workspaceWindowController
         self.workspaceModel = workspaceModel
+        self.reviewAgentModel = reviewAgentModel
+        self.searchModel = searchModel
+        self.searchWindowController = searchWindowController
         self.applicationMenuController = applicationMenuController
 
         let shortcut = GitHubBarShortcut.openMenu
@@ -77,8 +93,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         model.start()
-        workspaceModel.onDocumentChange = { [weak statusItemController] in
+        workspaceModel.onDocumentChange = { [weak statusItemController, weak workspaceModel, weak reviewAgentModel] in
             statusItemController?.rebuildStatusMenu()
+            if workspaceModel?.reviewDocument.enabled == false {
+                Task { await reviewAgentModel?.stop() }
+            }
         }
         workspaceModel.start()
         model.send(.launch)
@@ -104,6 +123,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         appModel?.stop()
         workspaceModel?.stop()
+    }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        Task {
+            searchModel?.pause()
+            await searchModel?.pendingCommand?.value
+            await reviewAgentModel?.stop()
+            sender.reply(toApplicationShouldTerminate: true)
+        }
+        return .terminateLater
     }
 
     private func showVisualValidationWindow(statusItemController: StatusItemController) {

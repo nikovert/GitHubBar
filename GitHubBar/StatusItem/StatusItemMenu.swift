@@ -48,6 +48,9 @@ extension StatusItemController: NSMenuDelegate {
     private func populateStatusMenu() {
         statusMenu.removeAllItems()
         statusMenu.addItem(headerItem())
+        let search = NSMenuItem(title: "Search PRs…", action: #selector(openPRSearch), keyEquivalent: "f")
+        search.target = self
+        statusMenu.addItem(search)
         statusMenu.addItem(repositoryFilterItem())
 
         if appModel.state.repositoryScope == .pinned,
@@ -237,7 +240,7 @@ extension StatusItemController: NSMenuDelegate {
             workspaceModel.document.resolvedEntry(for: $0, stackRoot: stackRoot)
         }
         let context = workspaceModel.reviewContext(for: pullRequest)
-        let priority = context.priority(in: workspaceModel.document)
+        let priority = workspaceModel.reviewPriority(for: context)
         let reviewStatus = workspaceModel.latestReview(for: context).map {
             WorkspaceReviewContext.status($0, currentSHA: context.headSHA)
         }
@@ -343,7 +346,7 @@ extension StatusItemController: NSMenuDelegate {
         item.indentationLevel = 1
         item.isEnabled = workspaceModel.reviewUnavailableReason(for: context) == nil
         item.toolTip = workspaceModel.reviewUnavailableReason(for: context)
-            ?? "Request Giles review; open the workspace for findings and policy controls."
+            ?? "Request agent review; open the workspace for findings and policy controls."
         return item
     }
 
@@ -600,7 +603,7 @@ extension StatusItemController: NSMenuDelegate {
             "\($0.stackMemberDisplay.accessibilityLabel). "
         } ?? ""
         let context = workspaceModel.reviewContext(for: pullRequest)
-        let priority = context.priority(in: workspaceModel.document)
+        let priority = workspaceModel.reviewPriority(for: context)
         let review = workspaceModel.latestReview(for: context).map {
             WorkspaceReviewContext.status($0, currentSHA: context.headSHA)
         } ?? "Not requested"
@@ -694,6 +697,10 @@ extension StatusItemController: NSMenuDelegate {
 
     @objc private func openWorkspaceBoard() {
         actions.openWorkspace(nil)
+    }
+
+    @objc private func openPRSearch() {
+        actions.openSearch()
     }
 
     @objc private func openWorkspaceForItem(_ sender: NSMenuItem) {

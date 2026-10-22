@@ -15,17 +15,23 @@ final class StatusItemController: NSObject {
     var registeredShortcut: GitHubBarShortcut?
     var pendingRepositoryScope: RepositoryScope?
     private var avatarCacheAccountLogin: String?
+    private let searchModel: PRSearchModel?
+    private let reviewAgentModel: ReviewAgentModel?
 
     init(
         appModel: AppModel,
         actions: AppActions = AppActions(),
         workspaceModel: WorkspaceModel,
-        avatarImageCache: AvatarImageCache
+        avatarImageCache: AvatarImageCache,
+        searchModel: PRSearchModel? = nil,
+        reviewAgentModel: ReviewAgentModel? = nil
     ) {
         self.appModel = appModel
         self.actions = actions
         self.workspaceModel = workspaceModel
         self.avatarImageCache = avatarImageCache
+        self.searchModel = searchModel
+        self.reviewAgentModel = reviewAgentModel
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         super.init()
 
@@ -46,6 +52,9 @@ final class StatusItemController: NSObject {
 
     private func apply(_ state: AppPresentationState) {
         workspaceModel.updateWorkload(state)
+        searchModel?.updateWorkload(state)
+        let reviewLogin = connectedAccountLogin(in: state)
+        Task { [weak reviewAgentModel] in await reviewAgentModel?.updateMonitoredAccount(reviewLogin) }
         guard let button = statusItem.button else { return }
         let accountLogin = connectedAccountLogin(in: state)
         if avatarCacheAccountLogin != accountLogin {

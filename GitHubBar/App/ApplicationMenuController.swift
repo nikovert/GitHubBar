@@ -22,6 +22,9 @@ final class ApplicationMenuController: NSObject {
         )
         applicationMenu.addItem(.separator())
         applicationMenu.addItem(
+            NSMenuItem(title: "Search PRs…", action: #selector(showSearch), keyEquivalent: "f")
+        )
+        applicationMenu.addItem(
             NSMenuItem(title: "Refresh", action: #selector(refresh), keyEquivalent: "r")
         )
         applicationMenu.addItem(
@@ -49,6 +52,10 @@ final class ApplicationMenuController: NSObject {
 
     @objc private func showSettings() {
         actions.openSettings()
+    }
+
+    @objc private func showSearch() {
+        actions.openSearch()
     }
 
     @objc private func showWorkspace() {

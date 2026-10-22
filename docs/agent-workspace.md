@@ -78,17 +78,18 @@ Application Support location.
 
 ## Agent review integration
 
-The optional Giles integration uses the bundled CLI's `agent` JSON bridge for review
+The optional review-agent integration uses the bundled CLI's `agent` JSON bridge for review
 requests, policy, priority, and progress. It stores review state separately in
 `agent-reviews.json`. See [Agent reviews](agent-reviews.md) for setup, approved defaults,
-queue behavior, and packaging checks. The existing external Giles installation/path
-setup remains optional; GitHubBar does not bundle or start a Giles daemon.
+queue behavior, and packaging checks. Configure any compatible review worker in Settings,
+then explicitly Save and Start it, or choose external worker mode. A raw coding CLI
+needs a compatible adapter; GitHubBar does not bundle a review worker.
 For custom clients, see the [agent review protocol](agent-review-protocol.md).
 
 ## Boundaries
 
 A pinned Codex or Claude session stays local until you explicitly ask it to review or
-publish something. Giles review publication requires the optional integration and its
+publish something. Agent review publication requires the optional integration and its
 effective policy: fixes default to off, comments to own PRs only, and replies to off.
 The board and review queue can contain private notes, instructions, and paths, so do not
 commit `workspace.json` or `agent-reviews.json` to a repository.

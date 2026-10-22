@@ -5,17 +5,17 @@ import XCTest
 final class AgentReviewTests: XCTestCase {
     private let pr = "https://github.com/acme/widget/pull/12"
 
-    private func context(author: String = "alice", humans: [String] = ["niko"], teams: Int = 0) -> AgentPRContext {
-        AgentPRContext(prURL: pr, authorLogin: author, accountLogin: "niko", headSHA: "abc",
+    private func context(author: String = "alice", humans: [String] = ["reviewer"], teams: Int = 0) -> AgentPRContext {
+        AgentPRContext(prURL: pr, authorLogin: author, accountLogin: "reviewer", headSHA: "abc",
                        requestedHumans: humans, requestedTeamCount: teams, reviewersComplete: true)
     }
 
-    func testSoleHumanRequestOutranksResearchButNotWithOutstandingTeam() {
+    func testSoleHumanRequestOutranksConfiguredAuthorButNotWithOutstandingTeam() {
         let board = LocalWorkspaceDocument.empty
         XCTAssertEqual(context().priority(in: board).rank, 3)
         XCTAssertEqual(context(teams: 1).priority(in: board).rank, 1)
-        XCTAssertEqual(context(author: "Reina234", humans: ["niko", "bob"]).priority(in: board).rank, 2)
-        XCTAssertEqual(context(author: "michaelcraiger", humans: []).priority(in: board).rank, 2)
+        XCTAssertEqual(context(author: "colleague", humans: ["reviewer", "bob"]).priority(in: board, priorityAuthors: ["colleague"]).rank, 2)
+        XCTAssertEqual(context(author: "colleague", humans: []).priority(in: board).rank, 1)
     }
 
     func testExplicitLowOverridesSoleReviewerAndClearingRestoresAutomatic() throws {
@@ -33,11 +33,11 @@ final class AgentReviewTests: XCTestCase {
         var document = AgentReviewDocument()
         XCTAssertEqual(document.effectivePolicy(for: context()).fixMode, .off)
         XCTAssertFalse(document.effectivePolicy(for: context()).comments!)
-        XCTAssertTrue(document.effectivePolicy(for: context(author: "niko")).comments!)
-        XCTAssertFalse(document.effectivePolicy(for: context(author: "niko")).replies!)
+        XCTAssertTrue(document.effectivePolicy(for: context(author: "reviewer")).comments!)
+        XCTAssertFalse(document.effectivePolicy(for: context(author: "reviewer")).replies!)
         document.defaultPolicy.fixMode = .all
         XCTAssertEqual(document.effectivePolicy(for: context()).fixMode, .off)
-        XCTAssertEqual(document.effectivePolicy(for: context(author: "niko")).fixMode, .all)
+        XCTAssertEqual(document.effectivePolicy(for: context(author: "reviewer")).fixMode, .all)
         document.policyOverrides[pr] = AgentReviewPolicy(fixMode: .lowRisk, replies: true)
         XCTAssertEqual(document.effectivePolicy(for: context()).fixMode, .lowRisk)
         XCTAssertTrue(document.effectivePolicy(for: context()).replies!)
@@ -47,7 +47,7 @@ final class AgentReviewTests: XCTestCase {
     func testQueueDeduplicatesActiveRequestsAndAllowsRereview() throws {
         var doc = AgentReviewDocument()
         doc.enabled = true
-        doc.accountLogin = "niko"
+        doc.accountLogin = "reviewer"
         let first = try doc.enqueue(context: context(), source: "board", now: Date())
         let duplicate = try doc.enqueue(context: context(), source: "slack", now: Date())
         XCTAssertEqual(first.id, duplicate.id)
@@ -58,7 +58,7 @@ final class AgentReviewTests: XCTestCase {
     func testExpiredWorkerIsNotReplayedAndDifferentOwnerCannotUpdate() throws {
         var doc = AgentReviewDocument()
         doc.enabled = true
-        doc.accountLogin = "niko"
+        doc.accountLogin = "reviewer"
         let now = Date(timeIntervalSince1970: 1000)
         _ = try doc.enqueue(context: context(), source: "board", now: now)
         let job = try XCTUnwrap(doc.claim(workerID: "one", board: .empty, now: now))
@@ -78,7 +78,7 @@ final class AgentReviewTests: XCTestCase {
 
     func testReviewBecomesStaleOnlyWhenHeadChanges() throws {
         var doc = AgentReviewDocument()
-        doc.enabled = true; doc.accountLogin = "niko"
+        doc.enabled = true; doc.accountLogin = "reviewer"
         var job = try doc.enqueue(context: context(), source: "board", now: Date())
         job.status = .completed
         XCTAssertEqual(job.displayStatus(currentSHA: "abc"), "Completed")
@@ -93,7 +93,7 @@ final class AgentReviewTests: XCTestCase {
 
     func testExplicitRerequestAfterWorkerExpiryCreatesNewJob() throws {
         var doc = AgentReviewDocument()
-        doc.enabled = true; doc.accountLogin = "niko"
+        doc.enabled = true; doc.accountLogin = "reviewer"
         let now = Date(timeIntervalSince1970: 1000)
         let original = try doc.enqueue(context: context(), source: "board", now: now)
         _ = doc.claim(workerID: "gone", board: .empty, now: now)

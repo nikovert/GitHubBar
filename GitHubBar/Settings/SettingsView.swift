@@ -6,6 +6,8 @@ struct SettingsView: View {
     @AppStorage(AppearanceController.defaultsKey) private var appearance = AppearancePreference.system.rawValue
     @Bindable var appModel: AppModel
     @Bindable var updateModel: UpdateModel
+    @Bindable var reviewAgentModel: ReviewAgentModel
+    @Bindable var workspaceModel: WorkspaceModel
 
     var body: some View {
         ScrollView {
@@ -24,6 +26,10 @@ struct SettingsView: View {
 
                 SettingsSection(title: "Repositories", systemImage: "folder") {
                     PinnedRepositoriesSettingsView(appModel: appModel)
+                }
+
+                SettingsSection(title: "Review agent", systemImage: "terminal") {
+                    ReviewAgentSettingsView(model: reviewAgentModel, workspace: workspaceModel)
                 }
 
                 SettingsSection(title: "Refresh", systemImage: "arrow.clockwise") {

@@ -25,13 +25,16 @@
 - Keep local priority, status tags, and agent notes for each PR or stack. PRs inherit stack
   values until overridden. The board is stored only on this Mac.
 - Scan PR titles, authors, requested reviewers, review status, and stack members in the board.
+- Use **Search PRs** to search your pull-request workload. See the
+  [PR search guide](docs/pr-search.md).
 - Create a new Codex or Claude worktree/tmux session, or pin an existing one.
 - Select a PR with a running pinned agent from the menu to jump into its tmux session.
   Right-click a PR to edit its board entry, or open **Workspace Board…** from the menu.
 - Let local agents update the board with the `GitHubBarWorkspaceCLI` command. See
   [Agent workspace guide](docs/agent-workspace.md).
-- Connect an optional Giles worker for queued agent reviews, policy, and progress using
-  the bundled CLI. Approved defaults: fixes off, comments on own PRs only, replies off.
+- Configure any compatible local review worker in Settings, or use an external worker,
+  for queued reviews, policy, and progress through the bundled CLI. Coding CLIs need a
+  compatible adapter. Defaults: fixes off, comments on own PRs only, replies off.
   See [Agent review integration and packaging](docs/agent-reviews.md).
 
 ## Built for review at scale

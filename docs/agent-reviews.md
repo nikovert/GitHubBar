@@ -1,81 +1,92 @@
 # Agent reviews
 
-GitHubBar exchanges local review requests and results with an optional Giles worker
+GitHubBar exchanges local review requests and results with any compatible review worker
 through `GitHubBarWorkspaceCLI agent`. The CLI is bundled in
-`GitHubBar.app/Contents/MacOS` in validation, stable, and Xcode builds. Giles remains a
-separate installation; existing external Giles path setup is optional. Installing
-GitHubBar alone does not start a review worker.
+`GitHubBar.app/Contents/MacOS` in validation, stable, and Xcode builds. Review workers
+are installed separately. Colleagues can build GitHubBar without a worker installed.
 
-See the [agent review protocol](agent-review-protocol.md) for bridge operations,
-request fields, response formats, and queue semantics.
+A general-purpose coding CLI, including Claude or Codex, is **not automatically a
+review worker**. It needs an adapter implementing the
+[agent review protocol](agent-review-protocol.md), including queue claims, leases,
+policy checks, and result updates. GitHubBar does not supply such an adapter or infer
+compatibility from the executable's name.
 
-## Setup and approved defaults
+## Configure in Settings
 
-Use the same macOS account and workspace directory for GitHubBar and Giles. The normal
-directory is `~/Library/Application Support/GitHubBar`; the CLI accepts an absolute
-`GITHUBBAR_WORKSPACE_DIR` override for isolated tests. Review state lives in
-`agent-reviews.json`, separate from board metadata in `workspace.json`. Both use local
-locking and atomic writes. Do not edit them directly while clients are running.
+Under **Review agent**, choose a display name and one of these modes:
 
-Inspect the bridge without enabling a worker:
+- **External worker**: run your compatible worker independently. GitHubBar does not
+  start, stop, or monitor that process. This is the default for existing installations.
+- **Start from GitHubBar**: enter an absolute executable path, arguments, and an existing
+  absolute working directory. The executable must be a compatible foreground worker.
 
-```bash
-workspace_cli="/Applications/GitHubBar.app/Contents/MacOS/GitHubBarWorkspaceCLI"
-printf '%s\n' '{"op":"show"}' | "$workspace_cli" agent
-```
-
-Use the app's actual location. Giles reads its JSON configuration from `config.json`
-in its checkout, or from the path passed to `python -m giles.app`. Add a top-level
-`bridge` object to your existing configuration, preserving the other settings:
+Arguments accept a JSON array of strings or one argument per line. For example:
 
 ```json
-{
-  "bridge": {
-    "workspace_cli": "/Applications/GitHubBar.app/Contents/MacOS/GitHubBarWorkspaceCLI",
-    "github_login": "your-login",
-    "slack_dm_user": "U_ALLOWED_USER",
-    "enabled": true,
-    "poll_interval_seconds": 15,
-    "fix_check_commands": [],
-    "fix_hook_command": ["pre-commit", "run", "--files"]
-  }
-}
+["--config", "/Users/you/Review Worker/config.json", "--foreground"]
 ```
 
-This is a configuration fragment, not a replacement for your existing Giles config.
-Replace `your-login` and `U_ALLOWED_USER`; the Slack ID must already appear in the
-top-level `allowed_user_ids`. Repository access still follows `allowed_repositories`.
-The keys below are nested inside `bridge`, as defined by Giles's `giles/config.py`:
+These flags are illustrative; use your adapter's actual flags. No shell is involved:
+spaces, quotes, semicolons, and `$()` remain literal argument characters. Do not quote
+the executable or directory fields. `~`, `$HOME`, and globs are not expanded. Blank
+argument lines are omitted; use JSON for empty arguments or embedded newlines.
+Arguments are limited to 256 elements and 64 KiB total, without NUL bytes.
 
-| Setting | Value |
+**Save** persists the connection and priority authors without launching anything.
+**Test configuration** validates the draft's paths and argument syntax and checks for
+the bundled CLI. It does not execute the worker, save changes, contact a provider,
+or verify protocol compatibility. **Start** uses the saved configuration and requires
+reviews enabled for the matching monitored account. Stop a running worker before saving
+another connection. There is no automatic start, restart, or installation.
+
+The app locates the bridge inside its current bundle, so moving or renaming the app
+does not require a hardcoded installation path. Managed workers inherit the app's
+environment, with these variables explicitly set:
+
+| Variable | Value |
 | --- | --- |
-| `workspace_cli` | Required absolute path; `~` is not expanded |
-| `enabled` | Boolean; defaults to `false`. Set `true` to opt into daemon integration |
-| `github_login` | Required personal GitHub login, matching `gh` authentication; letters, digits, and hyphens only |
-| `slack_dm_user` | Required existing allowed Slack user ID for board-request notifications |
-| `poll_interval_seconds` | Finite number from 1 to 60; defaults to 15 seconds |
-| `fix_check_commands` | List of nonempty argv arrays, never shell strings; defaults to `[]` |
-| `fix_hook_command` | Nonempty argv array; defaults to `["pre-commit", "run", "--files"]` |
+| `GITHUBBAR_WORKSPACE_CLI` | Absolute path to the bundled CLI executable |
+| `GITHUBBAR_WORKSPACE_DIR` | Absolute directory used by the app's review store |
 
-Configure checks appropriate to the reviewed repository before enabling fixes. For
-example, `[["python", "-m", "pytest", "tests/test_parser.py"]]` is a valid
-`fix_check_commands` value for a Python repository with that test file. Each argv
-element must be a nonempty string without a NUL character. Paths and executables
-must be available to the Giles process. No separate workspace-directory JSON key
-exists; isolated clients use the `GITHUBBAR_WORKSPACE_DIR` environment variable.
+Both paths are visible in Settings for external workers. Use the same macOS account
+and data directory for both clients. The default is
+`~/Library/Application Support/GitHubBar`. CLI invocations accept an absolute
+`GITHUBBAR_WORKSPACE_DIR` override for isolated tests. Managed workers receive the app
+store's directory, overriding any inherited value.
 
-With `bridge` absent or `null`, Giles keeps its existing behavior. Setting
-`bridge.enabled` to `false` disables daemon integration but still validates the supplied
-bridge settings. Configure the local
-review document with your account login and enable it only when intentionally opting
-in. For example, after replacing `YOUR_LOGIN`:
+Connection settings and `priority_authors` are additive fields in schema-1
+`agent-reviews.json`, protected by its existing local lock and atomic writes. Old
+documents load with no saved connection and an empty author list; jobs and policy
+overrides remain intact. Workers must use CLI operations and never rewrite the document
+directly. Connection arguments are local plaintext; use the worker's own credential
+store rather than putting secrets in arguments.
 
-```bash
-printf '%s\n' '{"op":"configure","enabled":true,"account_login":"YOUR_LOGIN"}' \
-  | "$workspace_cli" agent
-```
+## Lifecycle and diagnostics
 
-Approved initial policies are:
+“Process running; compatibility unverified” means only that the launched process has
+not exited. Queue progress provides separate evidence that a worker is consuming jobs.
+No connection handshake is claimed. Worker stdin is closed; stdout and stderr are
+discarded. Only the latest 50 lifecycle events are retained in memory, without paths,
+arguments, PR content, or worker output. For debugging, run the adapter independently
+with its own private logging configuration.
+
+**Stop** sends termination, waits up to one second, then sends a kill signal if needed
+and waits up to one more second. It controls the direct process only. Compatible
+workers must stay in the foreground, supervise their children, and stop them on
+termination; detached subprocesses cannot be managed by GitHubBar. The app stops its
+worker at shutdown and when the monitored account changes or disconnects. Switching
+accounts does not migrate a queue: use separate workspace state for another account.
+External workers remain the responsibility of their external supervisor.
+
+Stopping preserves queued requests. An interrupted running job expires according to
+its lease and is not automatically replayed. Inspect remote outcomes before requesting
+it again. Disabling integration prevents further claims and returns an all-off
+effective policy; compatible workers must recheck that policy before external writes.
+
+## Policies and priority
+
+Enable reviews for the monitored GitHub account separately from starting the worker.
+The initial policies remain:
 
 | Action | Own PR | Someone else's PR |
 | --- | --- | --- |
@@ -85,98 +96,66 @@ Approved initial policies are:
 
 PR overrides take precedence over stack overrides, then global defaults. Stack policy
 keys use `stack:` followed by the root PR URL. A `null` field clears an override.
-Fix modes are `off`, `low_risk`, and `all`; neither stack nor global fix settings
-authorize fixes on another author's PR. Replies, if enabled, apply only to new human
-comments in Giles-originated GitHub review threads. Bots and Giles itself are excluded.
+Fix modes are `off`, `low_risk`, and `all`; stack and global settings cannot authorize
+fixes on another author's PR.
 
-## Requests, priority, and progress
+Manual priority wins, including inherited stack priority. Otherwise, a complete roster
+with the monitored account as sole requested human reviewer and no requested teams is
+high priority. Authors in **Priority authors** receive medium priority, compared
+case-insensitively. The list defaults to empty; all others are low. The board orders
+oldest GitHub updates first within a priority; queue claims order oldest requests first.
+Clearing manual priority restores inherited or automatic priority.
 
-Board requests and authorized Slack requests enter the same queue. Slack policy and
-priority commands require an allowed user; PR text and thread content confer no
-permissions. Board requests report progress to the board and a Slack DM; Slack requests
-report to their original thread. Requests can carry focuses and additional instructions.
-
-Manual priority wins. Otherwise, a sole human review request for the configured account
-is high priority only when the reviewer roster is complete and no teams are requested.
-PRs by `Reina234` or `michaelcraiger` are medium priority; the rest are low. The board
-sorts the oldest updated PR first within a priority, while the worker claims the oldest
-request first within a priority. Clearing a PR's manual priority restores inherited
-stack priority or automatic priority.
-
-Only one job runs globally. A running job has a 180-second lease, renewed at least every
-60 seconds. Expired running jobs are persisted as failed on reads/loads, `show`,
-`enqueue`, and `claim`; they are not automatically replayed. You can explicitly
-re-request a review after lease expiry even if the worker has stopped. Duplicate
-requests for a queued job or a running job with an unexpired lease return the existing
-job; after completion or failure, an explicit request can run again at the same head SHA.
-
-The bridge reads one JSON object from stdin and returns JSON on stdout, exiting nonzero
-on invalid operations. Agent dates are Unix seconds and keys/enums use snake_case.
-See the [protocol reference](agent-review-protocol.md) for each operation and its fields.
-The ordinary CLI `show`/`set` commands still address the board document.
+Only one job runs per workspace. Its 180-second lease must be renewed at least every
+60 seconds. Expired jobs become failed on reads and claims. Duplicate active requests
+return the existing job; completed or failed jobs can be explicitly requested again.
 
 ## Publication and fixes
 
-Giles retains its find-and-verify review pipeline and publishes verified findings only
-under the effective policy. GitHub comments and commits are labelled Giles-generated
-and use the configured personal account. Policy is checked again before each external
-write; disabling integration stops further writes.
+The bridge manages policy and queue state; it does not perform reviews or publish to
+GitHub. A compatible worker must verify findings and recheck effective policy,
+authenticated identity, repository authorization, and head SHA before each external
+write. Label generated comments and commits with the configured worker identity.
+Replies, when authorized, should target new human comments in that worker's own review
+threads, excluding bots and the worker itself.
 
-Fixes use a separate writable worktree, targeted checks, and commit hooks, with account
-and head-SHA guards before remote writes. Low-risk fixes require a risk rationale;
-uncertainty prevents a push. `all` permits behavior changes with checks. There is no
-force push, amend, or merge. Failed fix worktrees are preserved and reported. An outgoing
-action ledger prevents duplicate effects after restart; ambiguous remote writes need
-reconciliation or attention rather than an automatic retry.
+Workers implementing fixes must use separate writable worktrees, targeted checks,
+commit hooks, and head-SHA guards. Low-risk fixes need a risk rationale; uncertainty
+must prevent a push. Do not force-push, amend, or merge. Preserve failed worktrees and
+report their location. Use an outgoing-action ledger to avoid duplicate remote writes;
+ambiguous outcomes require reconciliation rather than automatic replay. These are
+adapter responsibilities, not capabilities proven by the app's configuration test.
 
 ## Build and verify
 
-From the GitHubBar repository root, create the local universal validation ZIP:
+From the repository root, build and run core tests with full Xcode:
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test \
+  --package-path Packages/GitHubBarCore \
+  --scratch-path /private/tmp/githubbar-review-build
+```
+
+For an Xcode app build, run `scripts/generate-project.sh`, then build the `GitHubBar`
+scheme. Its CLI target shares the Swift package sources and embeds the executable in
+`Contents/MacOS`. No worker dependency is needed to compile the app.
+
+To build a local universal validation ZIP:
 
 ```bash
 GITHUBBAR_VERSION=0.1.0 GITHUBBAR_BUILD_NUMBER=1 scripts/package-validation.sh
 ```
 
-Choose the intended version/build number for a release. This compiles both the app and
-CLI for arm64 and x86_64, signs the CLI before the enclosing app with ad-hoc signatures,
-verifies both, and writes a ZIP plus SHA-256 file to `dist/`. It does not install the app.
-Inspect the packaged CLI with isolated state:
+This compiles the app and CLI for arm64 and x86_64, signs them with ad-hoc signatures,
+and writes a ZIP and checksum to `dist/`. Inspect the bridge with isolated state:
 
 ```bash
-for architecture in arm64 x86_64; do
-  lipo .build/validation/GitHubBar.app/Contents/MacOS/GitHubBarWorkspaceCLI \
-    -verify_arch "$architecture"
-done
 review_test_dir="$(mktemp -d /private/tmp/githubbar-review-check.XXXXXX)"
 printf '%s\n' '{"op":"show"}' \
   | GITHUBBAR_WORKSPACE_DIR="$review_test_dir" \
     .build/validation/GitHubBar.app/Contents/MacOS/GitHubBarWorkspaceCLI agent
 ```
 
-The temporary review directory is retained for inspection. Do not enable a production
-worker or send live Slack/GitHub requests as a packaging test.
-
-For Xcode builds, run `scripts/generate-project.sh`, then build the `GitHubBar` scheme.
-Its CLI target shares the Swift package's CLI sources and `GitHubBarCore` library,
-uses [XcodeGen's executable copy destination](https://github.com/yonaskolb/XcodeGen/blob/master/Docs/ProjectSpec.md#dependency)
-to embed it in `Contents/MacOS`, and signs it on copy. The CLI uses
-`-parse-as-library` to support its `@main` declaration in `main.swift`.
-
-For a stable universal ZIP, first configure the credentials and release variables in
-the [stable release runbook](releases/stable-release-runbook.md), then run:
-
-```bash
-scripts/package-stable.sh
-```
-
-Stable packaging verifies both executables, their architectures and hardened runtime
-signatures before notarization. It writes the final ZIP/checksum and signed appcast to
-`dist/stable/`. This path submits to Apple's notarization service and is not an offline
-validation command; run it only in the authorized release workflow.
-
-Both scripts validate paths before cleanup. `GITHUBBAR_BUILD_DIR` must be an absolute,
-dedicated directory strictly beneath this checkout's `.build/`; that directory is
-deleted on each build. `GITHUBBAR_DIST_DIR` must be an absolute path to this checkout's
-`dist/` or a descendant. Symlinks and `..` are resolved before checking those boundaries.
-Versions must be filename-safe identifiers and build numbers must contain digits only.
-Leave these overrides unset to use the defaults above.
+The temporary directory is retained for inspection. Packaging tests do not require
+enabling a worker or sending live reviews. For stable distribution, follow the
+[stable release runbook](releases/stable-release-runbook.md).

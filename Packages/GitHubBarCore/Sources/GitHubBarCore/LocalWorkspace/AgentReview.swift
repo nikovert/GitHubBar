@@ -80,7 +80,7 @@ public struct AgentPRContext: Codable, Equatable, Sendable {
         return copy
     }
 
-    public func priority(in board: LocalWorkspaceDocument) -> AgentPriority {
+    public func priority(in board: LocalWorkspaceDocument, priorityAuthors: [String] = []) -> AgentPriority {
         if let url = URL(string: prURL), let key = try? PullRequestKey(url: url) {
             let root = stackURL.flatMap(URL.init(string:)).flatMap { try? PullRequestKey(url: $0) }
             let manual = board.resolvedEntry(for: key, stackRoot: root).priority
@@ -93,8 +93,8 @@ public struct AgentPRContext: Codable, Equatable, Sendable {
            Set(requestedHumans.map { $0.lowercased() }) == [accountLogin.lowercased()] {
             return AgentPriority(rank: 3, reason: "You are the only requested human reviewer")
         }
-        if ["reina234", "michaelcraiger"].contains(authorLogin.lowercased()) {
-            return AgentPriority(rank: 2, reason: "Research author: \(authorLogin)")
+        if priorityAuthors.contains(where: { $0.lowercased() == authorLogin.lowercased() }) {
+            return AgentPriority(rank: 2, reason: "Priority author: \(authorLogin)")
         }
         return AgentPriority(rank: 1, reason: "Standard priority")
     }
@@ -148,11 +148,27 @@ public struct AgentReviewDocument: Codable, Equatable, Sendable {
     public var policyOverrides: [String: AgentReviewPolicy] = [:]
     public var contexts: [String: AgentPRContext] = [:]
     public var jobs: [AgentReviewJob] = []
+    public var reviewAgentConnection: ReviewAgentConnection?
+    public var priorityAuthors: [String] = []
     public init() {}
 
     enum CodingKeys: String, CodingKey {
         case schemaVersion = "schema_version", enabled, accountLogin = "account_login"
         case defaultPolicy = "default_policy", policyOverrides = "policy_overrides", contexts, jobs
+        case reviewAgentConnection = "review_agent_connection", priorityAuthors = "priority_authors"
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        schemaVersion = try c.decode(Int.self, forKey: .schemaVersion)
+        enabled = try c.decode(Bool.self, forKey: .enabled)
+        accountLogin = try c.decode(String.self, forKey: .accountLogin)
+        defaultPolicy = try c.decode(AgentReviewPolicy.self, forKey: .defaultPolicy)
+        policyOverrides = try c.decode([String: AgentReviewPolicy].self, forKey: .policyOverrides)
+        contexts = try c.decode([String: AgentPRContext].self, forKey: .contexts)
+        jobs = try c.decode([AgentReviewJob].self, forKey: .jobs)
+        reviewAgentConnection = try c.decodeIfPresent(ReviewAgentConnection.self, forKey: .reviewAgentConnection)
+        priorityAuthors = try c.decodeIfPresent([String].self, forKey: .priorityAuthors) ?? []
     }
 
     public func effectivePolicy(for context: AgentPRContext) -> AgentReviewPolicy {
@@ -170,7 +186,7 @@ public struct AgentReviewDocument: Codable, Equatable, Sendable {
                                  slackChannel: String? = nil, slackThreadTS: String? = nil) throws -> AgentReviewJob {
         let context = try context.validated()
         guard enabled, accountLogin.lowercased() == context.accountLogin.lowercased() else {
-            throw AgentReviewError.invalid("Enable Giles integration for the monitored account first.")
+            throw AgentReviewError.invalid("Enable agent reviews for the monitored account first.")
         }
         guard ["board", "slack"].contains(source) else { throw AgentReviewError.invalid("Unknown review request source.") }
         expireJobs(now: now)
@@ -199,8 +215,8 @@ public struct AgentReviewDocument: Codable, Equatable, Sendable {
         let candidates = jobs.indices.filter {
             jobs[$0].status == .queued && jobs[$0].context.accountLogin.lowercased() == accountLogin.lowercased()
         }.sorted { lhs, rhs in
-            let a = (contexts[jobs[lhs].context.prURL] ?? jobs[lhs].context).priority(in: board).rank
-            let b = (contexts[jobs[rhs].context.prURL] ?? jobs[rhs].context).priority(in: board).rank
+            let a = (contexts[jobs[lhs].context.prURL] ?? jobs[lhs].context).priority(in: board, priorityAuthors: priorityAuthors).rank
+            let b = (contexts[jobs[rhs].context.prURL] ?? jobs[rhs].context).priority(in: board, priorityAuthors: priorityAuthors).rank
             if a != b { return a > b }
             return jobs[lhs].requestedAt < jobs[rhs].requestedAt
         }

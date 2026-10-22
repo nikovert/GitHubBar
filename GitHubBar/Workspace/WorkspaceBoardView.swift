@@ -19,7 +19,8 @@ struct WorkspaceBoardView: View {
         }
         return Array(Set(result)).sorted {
             if let lhs = priorityContext(for: $0), let rhs = priorityContext(for: $1), lhs != rhs {
-                return WorkspaceReviewContext.precedes(lhs, rhs, in: workspace.document)
+                return WorkspaceReviewContext.precedes(lhs, rhs, in: workspace.document,
+                    priorityAuthors: workspace.reviewDocument.priorityAuthors)
             }
             return $0.key.description < $1.key.description
         }
@@ -101,13 +102,13 @@ struct WorkspaceBoardView: View {
                         .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                 }
                 if let context {
-                    Text(context.priority(in: workspace.document).reason)
+                    Text(workspace.reviewPriority(for: context).reason)
                         .font(.caption2).foregroundStyle(.secondary).lineLimit(2)
                 }
             }
             Spacer()
             if let context {
-                Text(context.priority(in: workspace.document).label)
+                Text(workspace.reviewPriority(for: context).label)
                     .font(.caption2).foregroundStyle(.orange)
             }
             if !workspace.document.sessions(for: subject).isEmpty {
@@ -121,7 +122,8 @@ struct WorkspaceBoardView: View {
         guard let details = details(for: subject) else { return nil }
         let members = subject.isStack ? details.members : [details.primary]
         return members.map { workspace.reviewContext(for: $0) }.sorted {
-            WorkspaceReviewContext.precedes($0, $1, in: workspace.document)
+            WorkspaceReviewContext.precedes($0, $1, in: workspace.document,
+                priorityAuthors: workspace.reviewDocument.priorityAuthors)
         }.first
     }
 
@@ -236,7 +238,7 @@ private struct WorkspaceDetailView: View {
                         }
                         .frame(maxWidth: 270)
                         if let primary = details?.primary {
-                            let priority = workspace.reviewContext(for: primary).priority(in: workspace.document)
+                            let priority = workspace.reviewPriority(for: workspace.reviewContext(for: primary))
                             Text("Effective: \(priority.label) · \(priority.reason)")
                                 .font(.caption).foregroundStyle(.secondary)
                         }

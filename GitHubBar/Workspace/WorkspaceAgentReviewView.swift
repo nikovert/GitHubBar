@@ -16,15 +16,15 @@ struct WorkspaceAgentReviewView: View {
         GroupBox("Agent review") {
             VStack(alignment: .leading, spacing: 12) {
                 Toggle(
-                    workspace.monitoredAccountLogin.map { "Enable Giles for @\($0)" }
-                        ?? "Connect a GitHub account to enable Giles",
+                    workspace.monitoredAccountLogin.map { "Enable agent reviews for @\($0)" }
+                        ?? "Connect a GitHub account to enable agent reviews",
                     isOn: Binding(
                         get: { workspace.reviewDocument.enabled && !workspace.reviewAccountMismatch },
                         set: { workspace.configureReviews(enabled: $0) }
                     )
                 )
                 .disabled(!workspace.canConfigureReviews)
-                Text("Requests wait for a configured, running local Giles worker. Enabling this integration does not install or start Giles.")
+                Text("Requests wait for a compatible review worker. Configure its connection in Settings. Enabling reviews does not install or start a worker.")
                     .font(.caption).foregroundStyle(.secondary)
                 if workspace.reviewAccountMismatch {
                     Text("Configured for @\(workspace.reviewDocument.accountLogin). Use a separate workspace for the monitored account.")
@@ -120,7 +120,7 @@ struct WorkspaceReviewRequestView: View {
                     workspace.requestReview(context)
                 }
                 .disabled(unavailable != nil)
-                .help(unavailable ?? "Request a Giles review of the current head commit")
+                .help(unavailable ?? "Request an agent review of the current head commit")
                 .accessibilityLabel("\(latest == nil ? "Request" : "Re-request") agent review for PR #\(pullRequest.number)")
                 if let latest {
                     Text(WorkspaceReviewContext.status(latest, currentSHA: context.headSHA))
@@ -134,7 +134,7 @@ struct WorkspaceReviewRequestView: View {
             }
             if let latest {
                 if latest.status == .queued {
-                    Text("Queued — waiting for local Giles. If this persists, check that the worker is running and configured for this account and workspace.")
+                    Text("Queued — waiting for a compatible review worker. If this persists, check that the worker is running and configured for this account and workspace.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Text("Requested \(latest.requestedAt, style: .relative) · SHA \(String(latest.headSHA.prefix(12)))")

@@ -189,6 +189,10 @@ final class WorkspaceModel {
         return reviewDocument.policyOverrides[Self.policyKey(subject)] ?? AgentReviewPolicy()
     }
 
+    func reviewPriority(for context: AgentPRContext) -> AgentPriority {
+        context.priority(in: document, priorityAuthors: reviewDocument.priorityAuthors)
+    }
+
     func setReviewFixMode(_ value: AgentFixMode?, for subject: BoardSubject?) {
         updateReviewPolicy(for: subject) { $0.fixMode = value }
     }

@@ -1,8 +1,8 @@
 # Agent review protocol
 
 The bundled `GitHubBarWorkspaceCLI agent` command provides local review state and queue
-operations for GitHubBar and Giles. See [Agent reviews](agent-reviews.md) for installation,
-Giles configuration, policy defaults, and packaging.
+operations for GitHubBar and compatible review workers. See
+[Agent reviews](agent-reviews.md) for connection setup, policy defaults, and packaging.
 
 ## Transport and storage
 
@@ -36,11 +36,11 @@ Every request includes `op`. Fields below are required unless marked optional.
 | `op` | Request fields | Response and behavior |
 | --- | --- | --- |
 | `show` | None | Document, including computed context priority |
-| `configure` | Optional `enabled` boolean and `account_login` string | Document; merges only supplied values |
+| `configure` | Optional `enabled` boolean, `account_login` string, and `priority_authors` string array | Document; merges only supplied values |
 | `sync` | `contexts` array of context objects | Document; upserts contexts unless their `updated_at` is older than the stored context; retains other contexts |
 | `policy` | `scope`: `global`, `pr`, or `stack`; `policy` patch; `pr_url` for `pr` or `stack` | Document; merges the patch at the selected scope |
 | `effective-policy` | `context` object | Object with concrete `fix_mode`, `comments`, and `replies` values |
-| `priority` | `pr_url`; `priority`: `high`, `medium`, `low`, or `none`; optional `by` string, default `giles` | Document; updates board priority while preserving notes and tags; `none` clears the PR override |
+| `priority` | `pr_url`; `priority`: `high`, `medium`, `low`, or `none`; optional `by` string, default `review-agent` | Document; updates board priority while preserving notes and tags; `none` clears the PR override |
 | `enqueue` | `context`; optional `source`: `board` or `slack`; optional `focuses`, `instructions`, `slack_channel`, `slack_thread_ts` | New or existing active job; omitted `source` defaults to `board` |
 | `claim` | Nonempty `worker_id` string | Claimed job or JSON `null` if none can be claimed |
 | `heartbeat` | `job_id` and `worker_id` strings | Job with renewed lease |
@@ -50,6 +50,11 @@ Every request includes `op`. Fields below are required unless marked optional.
 characters are letters, digits, or hyphens. Once configured, the account cannot be
 changed to another account in the same workspace; use separate state for that account.
 Account comparisons are case-insensitive.
+
+`priority_authors` replaces the configured list; `[]` clears it. Logins must be nonempty,
+at most 39 bytes, and contain only letters, digits, or hyphens. Up to 256 logins are
+accepted; duplicates are removed and values stored in lowercase. Omitting the field
+preserves the list. This setting does not grant review or publication permissions.
 
 `sync` ignores contexts for a different account once the document account is configured.
 For an existing PR, an incoming context with an older `updated_at` is ignored so stale
@@ -78,9 +83,18 @@ A job cannot be moved back to `queued` through this operation.
 | `policy_overrides` | Dictionary of partial policies keyed by PR URL or `stack:` plus root PR URL |
 | `contexts` | Dictionary of context objects keyed by canonical PR URL |
 | `jobs` | Array of queued, running, completed, and failed jobs |
+| `priority_authors` | Optional string array; defaults to `[]` in older documents |
+| `review_agent_connection` | Optional app connection settings; absent in older documents |
 
 Document responses include computed `priority_rank` and `priority_reason` on contexts.
 These are presentation fields; callers do not set them through `sync`.
+
+Connection settings contain `display_name`, `mode` (`external` or `managed`),
+`executable`, `arguments` (string array), and `working_directory`. The app saves these
+locally; the `configure` bridge operation does not change the launch connection. Workers
+must tolerate these additive schema-1 fields and use bridge operations rather than
+rewriting the file, so future settings are preserved. No existing job or policy field
+has changed format.
 
 ## PR context
 
@@ -105,8 +119,9 @@ URLs are normalized before storage.
 
 Manual board priority takes precedence, including inherited stack priority. Otherwise,
 a complete roster containing only the monitored account as a requested human and no
-requested teams gives high priority. Authors `Reina234` and `michaelcraiger` receive
-medium priority; other contexts receive low priority. Clearing a PR priority override
+requested teams gives high priority. Authors in `priority_authors` receive medium
+priority, compared case-insensitively; other contexts receive low priority.
+Clearing a PR priority override
 restores inherited stack priority or automatic priority. The board sorts by oldest
 `updated_at` within each priority; queue claims use oldest request time within priority.
 

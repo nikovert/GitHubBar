@@ -5,10 +5,15 @@ import SwiftUI
 final class SettingsWindowController {
     private let appModel: AppModel
     private let updateModel: UpdateModel
+    private let reviewAgentModel: ReviewAgentModel
+    private let workspaceModel: WorkspaceModel
     private var window: NSWindow?
 
-    init(appModel: AppModel, updateController: any UpdateControlling) {
+    init(appModel: AppModel, updateController: any UpdateControlling,
+         reviewAgentModel: ReviewAgentModel, workspaceModel: WorkspaceModel) {
         self.appModel = appModel
+        self.reviewAgentModel = reviewAgentModel
+        self.workspaceModel = workspaceModel
         updateModel = UpdateModel(controller: updateController)
     }
 
@@ -38,7 +43,8 @@ final class SettingsWindowController {
         window.isReleasedWhenClosed = false
         window.contentMinSize = NSSize(width: 620, height: 650)
         window.contentView = NSHostingView(
-            rootView: SettingsView(appModel: appModel, updateModel: updateModel)
+            rootView: SettingsView(appModel: appModel, updateModel: updateModel,
+                                   reviewAgentModel: reviewAgentModel, workspaceModel: workspaceModel)
         )
         return window
     }

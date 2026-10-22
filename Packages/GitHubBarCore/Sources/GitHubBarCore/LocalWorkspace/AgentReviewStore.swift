@@ -3,12 +3,23 @@ import Foundation
 
 public actor AgentReviewStore {
     private let directory: URL
+    public nonisolated var directoryURL: URL { directory }
     public init(directoryURL: URL? = nil) {
         directory = directoryURL ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("GitHubBar", isDirectory: true)
     }
 
     public func load() throws -> AgentReviewDocument { try transaction { $0 } }
+
+    @discardableResult
+    public func saveConnection(_ connection: ReviewAgentConnection, priorityAuthors: [String]) throws -> AgentReviewDocument {
+        let validated = try connection.validated()
+        let authors = try ReviewAgentConnection.validatedPriorityAuthors(priorityAuthors)
+        return try update { document in
+            document.reviewAgentConnection = validated
+            document.priorityAuthors = authors
+        }
+    }
 
     @discardableResult
     public func update(_ edit: @Sendable (inout AgentReviewDocument) throws -> Void) throws -> AgentReviewDocument {
@@ -55,7 +66,7 @@ public actor AgentReviewStore {
             guard let url = request.prURL.flatMap(URL.init(string:)), let raw = request.priority,
                   let priority = BoardPriority(rawValue: raw) else { throw AgentReviewError.invalid("Supply a PR URL and priority high, medium, low or none.") }
             let subject = BoardSubject.pullRequest(try PullRequestKey(url: url))
-            let by = request.by ?? "giles"
+            let by = request.by ?? "review-agent"
             _ = try await workspace.update { document in
                 var entry = document.entry(for: subject) ?? BoardEntry(subject: subject)
                 entry.priority = priority == .none ? nil : priority
@@ -74,13 +85,16 @@ public actor AgentReviewStore {
                         throw AgentReviewError.invalid("Invalid GitHub account login.")
                     }
                     guard document.accountLogin.isEmpty || document.accountLogin.lowercased() == login.lowercased() else {
-                        throw AgentReviewError.invalid("Giles is configured for a different GitHub account. Use a separate workspace for that account.")
+                        throw AgentReviewError.invalid("Agent reviews are configured for a different GitHub account. Use a separate workspace for that account.")
                     }
                     document.accountLogin = login
                 }
                 if let enabled = request.enabled {
-                    guard !enabled || !document.accountLogin.isEmpty else { throw AgentReviewError.invalid("Configure a GitHub account before enabling Giles.") }
+                    guard !enabled || !document.accountLogin.isEmpty else { throw AgentReviewError.invalid("Configure a GitHub account before enabling agent reviews.") }
                     document.enabled = enabled
+                }
+                if let authors = request.priorityAuthors {
+                    document.priorityAuthors = try ReviewAgentConnection.validatedPriorityAuthors(authors)
                 }
             case "sync":
                 for context in request.contexts ?? [] {
@@ -137,7 +151,7 @@ public actor AgentReviewStore {
             }
             var presented = document
             for (key, context) in document.contexts {
-                let priority = context.priority(in: board)
+                let priority = context.priority(in: board, priorityAuthors: document.priorityAuthors)
                 presented.contexts[key]?.priorityRank = priority.rank
                 presented.contexts[key]?.priorityReason = priority.reason
             }
@@ -164,6 +178,7 @@ private struct AgentBridgeRequest: Decodable {
     let op: String
     var enabled: Bool?
     var accountLogin: String?
+    var priorityAuthors: [String]?
     var contexts: [AgentPRContext]?
     var context: AgentPRContext?
     var scope: String?
@@ -187,6 +202,7 @@ private struct AgentBridgeRequest: Decodable {
     var worktreePath: String?
     enum CodingKeys: String, CodingKey {
         case op, enabled, accountLogin = "account_login", contexts, context, scope, prURL = "pr_url"
+        case priorityAuthors = "priority_authors"
         case policy, priority, by, source, focuses, instructions, slackChannel = "slack_channel"
         case slackThreadTS = "slack_thread_ts", workerID = "worker_id", jobID = "job_id", status, summary, error
         case headSHA = "head_sha", githubURL = "github_url", slackURL = "slack_url", worktreePath = "worktree_path"

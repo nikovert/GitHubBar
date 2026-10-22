@@ -6,7 +6,7 @@ import XCTest
 @MainActor
 final class WorkspaceReviewTests: XCTestCase {
     func testContextUsesOutstandingHumansAndPreservesUnknownRoster() {
-        let requested = [reviewer("me", .person), reviewer("giles", .bot), reviewer("team", .team)]
+        let requested = [reviewer("me", .person), reviewer("review-bot", .bot), reviewer("team", .team)]
         let context = WorkspaceReviewContext.make(
             pullRequest(requested: requested), accountLogin: "me", stackURL: nil
         )
@@ -28,7 +28,7 @@ final class WorkspaceReviewTests: XCTestCase {
         let old = context(number: 1, updatedAt: 10)
         let recent = context(number: 2, updatedAt: 20)
         var manual = context(number: 3, updatedAt: 30)
-        manual.authorLogin = "Reina234"
+        manual.authorLogin = "colleague"
         var board = LocalWorkspaceDocument.empty
         board.setEntry(BoardEntry(
             subject: .pullRequest(try PullRequestKey(url: URL(string: manual.prURL)!)), priority: .high
@@ -58,6 +58,26 @@ final class WorkspaceReviewTests: XCTestCase {
         XCTAssertNil(entry?.priority)
         XCTAssertEqual(entry?.note, "Keep me")
         XCTAssertEqual(entry?.tagIDs, ["blocked"])
+    }
+
+    func testSavedPriorityAuthorChangesDisplayedLabelAndSorting() async throws {
+        let fixture = fixture()
+        defer { try? FileManager.default.removeItem(at: fixture.directory) }
+        let older = context(number: 1, updatedAt: 10)
+        var configured = context(number: 2, updatedAt: 20)
+        configured.authorLogin = "COLLEAGUE"
+        await fixture.model.reload()
+        XCTAssertEqual(fixture.model.reviewPriority(for: configured).label, "Low")
+
+        _ = try await fixture.reviews.saveConnection(ReviewAgentConnection(), priorityAuthors: ["colleague"])
+        await fixture.model.reload()
+
+        XCTAssertEqual(fixture.model.reviewPriority(for: configured).label, "Medium")
+        let sorted = [older, configured].sorted {
+            WorkspaceReviewContext.precedes($0, $1, in: fixture.model.document,
+                priorityAuthors: fixture.model.reviewDocument.priorityAuthors)
+        }
+        XCTAssertEqual(sorted.map(\.prURL), [configured.prURL, older.prURL])
     }
 
     func testWorkloadSyncDoesNotNeedWindowOrEnableIntegration() async throws {

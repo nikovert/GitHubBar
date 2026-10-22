@@ -41,10 +41,11 @@ enum WorkspaceReviewContext {
     }
 
     static func precedes(
-        _ lhs: AgentPRContext, _ rhs: AgentPRContext, in document: LocalWorkspaceDocument
+        _ lhs: AgentPRContext, _ rhs: AgentPRContext, in document: LocalWorkspaceDocument,
+        priorityAuthors: [String] = []
     ) -> Bool {
-        let left = lhs.priority(in: document).rank
-        let right = rhs.priority(in: document).rank
+        let left = lhs.priority(in: document, priorityAuthors: priorityAuthors).rank
+        let right = rhs.priority(in: document, priorityAuthors: priorityAuthors).rank
         if left != right { return left > right }
         if lhs.updatedAt != rhs.updatedAt { return lhs.updatedAt < rhs.updatedAt }
         return lhs.prURL < rhs.prURL
