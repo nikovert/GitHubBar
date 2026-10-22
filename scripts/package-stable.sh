@@ -90,7 +90,9 @@ for executable in GitHubBar GitHubBarWorkspaceCLI; do
     print -u2 "Stable archive is missing executable $executable."
     exit 1
   fi
-  lipo "$binary" -verify_arch arm64 x86_64
+  for architecture in arm64 x86_64; do
+    lipo "$binary" -verify_arch "$architecture"
+  done
   codesign --verify --strict --verbose=2 "$binary"
   if ! codesign -dv --verbose=4 "$binary" 2>&1 | rg 'flags=.*runtime' >/dev/null; then
     print -u2 "Stable executable $executable is missing the hardened runtime signature flag."

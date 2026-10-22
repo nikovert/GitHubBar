@@ -118,7 +118,8 @@ codesign --verify --deep --strict --verbose=2 "$app_path"
 plutil -lint "$app_path/Contents/Info.plist"
 lipo "$app_path/Contents/MacOS/GitHubBar" -verify_arch arm64
 lipo "$app_path/Contents/MacOS/GitHubBar" -verify_arch x86_64
-lipo "$app_path/Contents/MacOS/GitHubBarWorkspaceCLI" -verify_arch arm64 x86_64
+lipo "$app_path/Contents/MacOS/GitHubBarWorkspaceCLI" -verify_arch arm64
+lipo "$app_path/Contents/MacOS/GitHubBarWorkspaceCLI" -verify_arch x86_64
 
 if strings "$app_path/Contents/MacOS/GitHubBar" \
   "$app_path/Contents/MacOS/GitHubBarWorkspaceCLI" | rg "secret-test-token|fixture-token|test-token" >/dev/null; then

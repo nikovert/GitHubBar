@@ -143,8 +143,10 @@ verifies both, and writes a ZIP plus SHA-256 file to `dist/`. It does not instal
 Inspect the packaged CLI with isolated state:
 
 ```bash
-lipo .build/validation/GitHubBar.app/Contents/MacOS/GitHubBarWorkspaceCLI \
-  -verify_arch arm64 x86_64
+for architecture in arm64 x86_64; do
+  lipo .build/validation/GitHubBar.app/Contents/MacOS/GitHubBarWorkspaceCLI \
+    -verify_arch "$architecture"
+done
 review_test_dir="$(mktemp -d /private/tmp/githubbar-review-check.XXXXXX)"
 printf '%s\n' '{"op":"show"}' \
   | GITHUBBAR_WORKSPACE_DIR="$review_test_dir" \
