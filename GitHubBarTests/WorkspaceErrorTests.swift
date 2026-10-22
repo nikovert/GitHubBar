@@ -11,7 +11,8 @@ final class WorkspaceErrorTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: directory) }
         let store = LocalWorkspaceStore(directoryURL: directory)
         let workspace = WorkspaceModel(
-            store: store, sessions: AgentSessionManager(store: store, tmuxURL: nil)
+            store: store, sessions: AgentSessionManager(store: store, tmuxURL: nil),
+            reviewStore: AgentReviewStore(directoryURL: directory)
         )
         workspace.errorMessage = "Could not create worktree"
 
@@ -30,7 +31,8 @@ final class WorkspaceErrorTests: XCTestCase {
         )
         let store = LocalWorkspaceStore(directoryURL: directory)
         let workspace = WorkspaceModel(
-            store: store, sessions: AgentSessionManager(store: store, tmuxURL: nil)
+            store: store, sessions: AgentSessionManager(store: store, tmuxURL: nil),
+            reviewStore: AgentReviewStore(directoryURL: directory)
         )
         workspace.errorMessage = "Could not create worktree"
 
@@ -45,7 +47,8 @@ final class WorkspaceErrorTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: directory) }
         let store = LocalWorkspaceStore(directoryURL: directory)
         let workspace = WorkspaceModel(
-            store: store, sessions: AgentSessionManager(store: store, tmuxURL: nil)
+            store: store, sessions: AgentSessionManager(store: store, tmuxURL: nil),
+            reviewStore: AgentReviewStore(directoryURL: directory)
         )
         workspace.errorMessage = "Could not create worktree"
         let changed = expectation(description: "Workspace root saved")

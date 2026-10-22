@@ -294,6 +294,9 @@ public struct GraphQLGitHubWorkloadClient: GitHubWorkloadClient {
         var metadata = MetadataAccumulator()
         metadata.record(rateLimit: page.data.rateLimit, hasErrors: page.hasErrors, warning: "pull-request hydration incomplete")
         var records = page.data.nodes.compactMap { $0.flatMap(HydratedRecord.init) }
+        if page.hasErrors {
+            for index in records.indices { records[index].requestsComplete = false }
+        }
 
         for index in records.indices {
             while records[index].reviewRequestsPageInfo.hasNextPage || records[index].reviewsPageInfo.hasNextPage {
@@ -317,19 +320,29 @@ public struct GraphQLGitHubWorkloadClient: GitHubWorkloadClient {
                         hasErrors: rosterPage.hasErrors,
                         warning: "review roster pagination incomplete"
                     )
+                    if rosterPage.hasErrors { records[index].requestsComplete = false }
                     guard let pullRequest = rosterPage.data.node else {
+                        records[index].requestsComplete = false
                         metadata.warnings.append("review roster pagination incomplete")
                         break
                     }
                     if let reviewRequests = pullRequest.reviewRequests {
+                        if !reviewRequests.nodes.allSatisfy({ $0.requestedReviewer?.presentation != nil }) {
+                            records[index].requestsComplete = false
+                        }
                         records[index].requestedReviewers.append(contentsOf: reviewRequests.nodes.compactMap(\.requestedReviewer))
                         records[index].reviewRequestsPageInfo = reviewRequests.pageInfo
+                    } else if includeReviewRequests {
+                        records[index].requestsComplete = false
+                        metadata.warnings.append("review roster pagination incomplete")
+                        break
                     }
                     if let reviews = pullRequest.reviews {
                         records[index].reviews.append(contentsOf: reviews.nodes)
                         records[index].reviewsPageInfo = reviews.pageInfo
                     }
                 } catch {
+                    records[index].requestsComplete = false
                     metadata.warnings.append("review roster pagination incomplete")
                     break
                 }
@@ -638,6 +651,7 @@ private extension GraphQLGitHubWorkloadClient {
           reviewDecision
           state
           updatedAt
+          headRefOid
           author { login avatarUrl }
           repository { id nameWithOwner }
           stack { id number size }
@@ -982,6 +996,7 @@ private struct PullRequestDTO: Decodable, Sendable {
     let reviewDecision: String?
     let state: String
     let updatedAt: String
+    let headRefOid: String?
     let author: ActorDTO?
     let repository: RepositoryDTO
     let stack: PullRequestStackIdentityDTO?
@@ -1092,6 +1107,8 @@ private struct HydratedRecord: Sendable {
     let title: String
     let url: URL
     let updatedAt: Date
+    let headSHA: String?
+    var requestsComplete = true
     var requestedReviewers: [RequestedReviewerDTO]
     var reviews: [ReviewDTO]
     var reviewRequestsPageInfo: PageInfoDTO
@@ -1126,7 +1143,9 @@ private struct HydratedRecord: Sendable {
         title = dto.title
         self.url = url
         self.updatedAt = updatedAt
+        headSHA = dto.headRefOid
         requestedReviewers = dto.reviewRequests.nodes.compactMap(\.requestedReviewer)
+        requestsComplete = dto.reviewRequests.nodes.allSatisfy { $0.requestedReviewer?.presentation != nil }
         reviews = dto.reviews.nodes
         reviewRequestsPageInfo = dto.reviewRequests.pageInfo
         reviewsPageInfo = dto.reviews.pageInfo
@@ -1164,8 +1183,9 @@ private struct HydratedRecord: Sendable {
             reviewDecision: reviewDecision,
             stackMembership: stackMembership,
             updatedAt: updatedAt,
-            requestedReviewers: requestedReviewerPresentations,
-            reviewers: reviewerOrder.compactMap { reviewersByID[$0] }
+            requestedReviewers: requestsComplete && !reviewRequestsPageInfo.hasNextPage ? requestedReviewerPresentations : nil,
+            reviewers: reviewerOrder.compactMap { reviewersByID[$0] },
+            headSHA: headSHA
         )
     }
 }
@@ -1193,6 +1213,7 @@ private extension RequestedReviewerDTO {
     }
 
     var presentation: ReviewerPresentation? {
+        guard ["User", "Bot", "Mannequin", "Team", "EnterpriseTeam"].contains(typeName) else { return nil }
         guard let reviewerKey else { return nil }
         if typeName == "Team" || typeName == "EnterpriseTeam" {
             let displayName = organization.map { organization in
@@ -1210,7 +1231,7 @@ private extension RequestedReviewerDTO {
             id: reviewerKey,
             displayName: login,
             avatarURL: avatarURL.flatMap(URL.init(string:)),
-            kind: .person
+            kind: typeName == "Bot" ? .bot : .person
         )
     }
 }

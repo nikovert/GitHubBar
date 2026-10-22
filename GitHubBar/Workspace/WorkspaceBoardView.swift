@@ -17,7 +17,12 @@ struct WorkspaceBoardView: View {
         result += pullRequests.compactMap { pullRequest in
             (try? PullRequestKey(url: pullRequest.url)).map(BoardSubject.pullRequest)
         }
-        return Array(Set(result)).sorted { $0.key.description < $1.key.description }
+        return Array(Set(result)).sorted {
+            if let lhs = priorityContext(for: $0), let rhs = priorityContext(for: $1), lhs != rhs {
+                return WorkspaceReviewContext.precedes(lhs, rhs, in: workspace.document)
+            }
+            return $0.key.description < $1.key.description
+        }
     }
 
     var body: some View {
@@ -40,11 +45,15 @@ struct WorkspaceBoardView: View {
                 )
                 .id(subject)
             } else {
-                ContentUnavailableView(
-                    "Select a pull request",
-                    systemImage: "tray.full",
-                    description: Text("Choose a PR or stack to set local status and manage agents.")
-                )
+                VStack {
+                    ContentUnavailableView(
+                        "Select a pull request",
+                        systemImage: "tray.full",
+                        description: Text("Choose a PR or stack to set local status and manage agents.")
+                    )
+                    WorkspaceAgentReviewView(workspace: workspace, subject: nil, pullRequest: nil)
+                        .padding()
+                }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
@@ -77,9 +86,7 @@ struct WorkspaceBoardView: View {
     }
 
     private func subjectRow(_ subject: BoardSubject) -> some View {
-        let resolved = workspace.document.resolvedEntry(
-            for: subject, stackRoot: stackRoot(for: subject)
-        )
+        let context = priorityContext(for: subject)
         let details = details(for: subject)
         return HStack(spacing: 6) {
             Image(systemName: subject.isStack ? "square.stack.3d.up" : "arrow.triangle.pull")
@@ -93,10 +100,14 @@ struct WorkspaceBoardView: View {
                     Text("\(subject.isStack ? "Stack · \(details.members.count) PRs · " : "")Requested: \(requestedReviewerSummary(for: details.primary))")
                         .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                 }
+                if let context {
+                    Text(context.priority(in: workspace.document).reason)
+                        .font(.caption2).foregroundStyle(.secondary).lineLimit(2)
+                }
             }
             Spacer()
-            if resolved.priority != .none {
-                Text(resolved.priority.rawValue.capitalized)
+            if let context {
+                Text(context.priority(in: workspace.document).label)
                     .font(.caption2).foregroundStyle(.orange)
             }
             if !workspace.document.sessions(for: subject).isEmpty {
@@ -104,6 +115,14 @@ struct WorkspaceBoardView: View {
             }
         }
         .help(details?.primary.title ?? subject.key.description)
+    }
+
+    private func priorityContext(for subject: BoardSubject) -> AgentPRContext? {
+        guard let details = details(for: subject) else { return nil }
+        let members = subject.isStack ? details.members : [details.primary]
+        return members.map { workspace.reviewContext(for: $0) }.sorted {
+            WorkspaceReviewContext.precedes($0, $1, in: workspace.document)
+        }.first
     }
 
     private func details(for subject: BoardSubject) -> BoardSubjectDetails? {
@@ -180,6 +199,14 @@ private struct WorkspaceDetailView: View {
                                         Link("#\(member.number) \(member.title)", destination: member.url)
                                         Text("By \(member.author?.displayName ?? "unknown") · Requested: \(requestedReviewerSummary(for: member))")
                                             .font(.caption).foregroundStyle(.secondary)
+                                        WorkspaceReviewRequestView(workspace: workspace, pullRequest: member)
+                                        if let key = try? PullRequestKey(url: member.url) {
+                                            DisclosureGroup("PR policy overrides") {
+                                                WorkspaceReviewPolicyControls(
+                                                    workspace: workspace, subject: .pullRequest(key)
+                                                )
+                                            }
+                                        }
                                     }
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 }
@@ -192,17 +219,27 @@ private struct WorkspaceDetailView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                WorkspaceAgentReviewView(
+                    workspace: workspace, subject: subject, pullRequest: details?.primary
+                )
+
                 GroupBox("Priority and status") {
                     VStack(alignment: .leading, spacing: 10) {
                         Picker("Priority", selection: Binding(
-                            get: { resolved.priority },
+                            get: { workspace.document.entry(for: subject)?.priority ?? .none },
                             set: { workspace.setPriority($0, for: subject) }
                         )) {
                             ForEach(BoardPriority.allCases, id: \.self) { priority in
-                                Text(priority.rawValue.capitalized).tag(priority)
+                                Text(priority == .none ? "Automatic" : priority.rawValue.capitalized)
+                                    .tag(priority)
                             }
                         }
                         .frame(maxWidth: 270)
+                        if let primary = details?.primary {
+                            let priority = workspace.reviewContext(for: primary).priority(in: workspace.document)
+                            Text("Effective: \(priority.label) · \(priority.reason)")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
                         FlowTagsView(workspace: workspace, subject: subject, selectedIDs: resolved.tagIDs)
                         if let origin = resolved.updatedBy {
                             Text("Last local update by \(origin)")

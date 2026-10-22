@@ -10,6 +10,12 @@ struct GitHubBarWorkspaceCLI {
             let directory = ProcessInfo.processInfo.environment["GITHUBBAR_WORKSPACE_DIR"]
                 .map { URL(fileURLWithPath: $0, isDirectory: true) }
             let store = LocalWorkspaceStore(directoryURL: directory)
+            if command == "agent" {
+                let output = try await AgentReviewStore(directoryURL: directory).execute(
+                    FileHandle.standardInput.readDataToEndOfFile(), workspace: store)
+                print(String(decoding: output, as: UTF8.self))
+                return
+            }
             let document: LocalWorkspaceDocument
             switch command {
             case "set":
@@ -33,6 +39,7 @@ struct GitHubBarWorkspaceCLI {
 
     private static let usage = """
     Usage: githubbar-workspace show
+           githubbar-workspace agent < request.json
            githubbar-workspace set --pr URL|--stack URL [--priority none|low|medium|high]
              [--tags id,id] [--note TEXT] [--by codex|claude|local]
     """

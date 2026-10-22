@@ -12,6 +12,7 @@
 		24D394E5E965795763EAAEF4 /* StatusIconRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CC8053760D622F2FF04D61B /* StatusIconRenderer.swift */; };
 		28A8B231972DDE1645DFDE47 /* WorkspaceErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB1DBB43398AAD41650BE70 /* WorkspaceErrorTests.swift */; };
 		33F3A109BE94C8CCF3972C29 /* PinnedRepositoriesSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71D454931E2AAFE022095FA7 /* PinnedRepositoriesSettingsView.swift */; };
+		382C674DE3CD8C6A3D7ACA6C /* WorkspaceReviewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7B32B41B61F3D4022C4D61A /* WorkspaceReviewTests.swift */; };
 		43A39E1D85DFA5D292E4D258 /* GitHubBarCore in Frameworks */ = {isa = PBXBuildFile; productRef = 10697BA3CB9F8BCD98262056 /* GitHubBarCore */; };
 		4E861E74CE10041FA7DDD5C3 /* ApplicationMenuController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CE41C26ABE21A457E830821 /* ApplicationMenuController.swift */; };
 		54C3DE85335363A079158DDF /* AccountConnectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685E6864EC15CF08046AF835 /* AccountConnectionView.swift */; };
@@ -20,6 +21,7 @@
 		65679A108BD941742103A172 /* MacLaunchAtLoginController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 413C65D56097A21D67B2DFEC /* MacLaunchAtLoginController.swift */; };
 		6C570A0F606EA7D7AE56A2A2 /* UpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C39E485BC4A03542878D61F2 /* UpdateController.swift */; };
 		7F3C916A59C7CBD9D337C4B8 /* AppearanceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 464705010379FB9898CD5D01 /* AppearanceController.swift */; };
+		92C6A64DBFF91472F4150623 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10BD98E8C7F2AD6A97FECDB8 /* main.swift */; };
 		92D81BE0493C6FAEDF136177 /* RepositoryScopeControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = D582835D6F15750A7B876847 /* RepositoryScopeControl.swift */; };
 		981043800D9A3D281B9FB819 /* MenuActionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78AE4A990C81D192A301DE12 /* MenuActionRow.swift */; };
 		A9BA698E6D882DD71A2D7480 /* UpdateControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B9813F72CF2F4CB20333095 /* UpdateControllerTests.swift */; };
@@ -30,19 +32,30 @@
 		B5EB0FFF8FE8ACFF9C185652 /* PullRequestRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6CF0FB24B12896466FD2E72 /* PullRequestRow.swift */; };
 		C06AB30D1D8A92AC70DCCBCA /* WorkspaceModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F1741DCE7543D2E3AD1644A /* WorkspaceModel.swift */; };
 		C0EFC1B2F18736A240AC0F16 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DC54AA23EDF526A120E685B /* SettingsView.swift */; };
+		C3E5DA5DE8468DC3CE0C840E /* WorkspaceReviewContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = B474A906ED2F207BDD606D17 /* WorkspaceReviewContext.swift */; };
 		C4365C499C9F8EFB21D56CBC /* PopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38380275717FD18A95869865 /* PopoverView.swift */; };
+		C8A714EDCE518FDD0D4882BD /* GitHubBarWorkspaceCLI in Embed Dependencies */ = {isa = PBXBuildFile; fileRef = 2AA14DE32C2192BBB303D436 /* GitHubBarWorkspaceCLI */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		D0F5EB9ED948C3A47491C2D1 /* WorkspaceWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA9183D9C2DB406538601D33 /* WorkspaceWindowController.swift */; };
 		D10A85FE5C3AF7F100FAF722 /* StatusItemMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48506E36134F710544DC49CA /* StatusItemMenu.swift */; };
 		D40BE45B4EE4BB1462A34A4B /* TerminalSessionOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9A6E6B856E9CF0229E38E57 /* TerminalSessionOpener.swift */; };
 		D48F19C02711831D9678C4D1 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F6E61A749B9AF8CCF4DDD2D6 /* Sparkle */; };
 		DB5188081DFCC108113FB924 /* WorkspaceBoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D09C46D2E8EF437EAFE95469 /* WorkspaceBoardView.swift */; };
 		DE1ED625BE58BCFBBAF98CC9 /* WorkloadSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9BBAE50AD7E339CECA2EAA2 /* WorkloadSection.swift */; };
+		E1FD452F6CE24DF6F82682C3 /* GitHubBarCore in Frameworks */ = {isa = PBXBuildFile; productRef = 582165A1E29B393B7A830970 /* GitHubBarCore */; };
 		E4D2AA6C419BAA7A57217BE8 /* StatusItemController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A08B252F35CACF12F8B1CA03 /* StatusItemController.swift */; };
 		EA70C75EAE03957D64C8A89A /* IdentityAvatarImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8F49D83D230FB079EF27B2 /* IdentityAvatarImage.swift */; };
+		EBB4CCD9563EED75CF8B3CA4 /* WorkspaceAgentReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 538602EE58F02DB5398BD17A /* WorkspaceAgentReviewView.swift */; };
 		F751EBF210E1E91BB7E0B863 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15A06FCA62CDE78A733A5E75 /* AppModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		0ECF3D6BB0C00F1C566CFB2F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 922DF8998C5CE548D87DE52F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BCB09E8CF194DFBD818A567F;
+			remoteInfo = GitHubBarWorkspaceCLI;
+		};
 		8AD9B34FB18D02E32A1E2CF3 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 922DF8998C5CE548D87DE52F /* Project object */;
@@ -52,10 +65,26 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		B423BFA670DA4C091426BB6F /* Embed Dependencies */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				C8A714EDCE518FDD0D4882BD /* GitHubBarWorkspaceCLI in Embed Dependencies */,
+			);
+			name = "Embed Dependencies";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		0CC8053760D622F2FF04D61B /* StatusIconRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusIconRenderer.swift; sourceTree = "<group>"; };
 		0F1741DCE7543D2E3AD1644A /* WorkspaceModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceModel.swift; sourceTree = "<group>"; };
+		10BD98E8C7F2AD6A97FECDB8 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		15A06FCA62CDE78A733A5E75 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		2AA14DE32C2192BBB303D436 /* GitHubBarWorkspaceCLI */ = {isa = PBXFileReference; includeInIndex = 0; path = GitHubBarWorkspaceCLI; sourceTree = BUILT_PRODUCTS_DIR; };
 		2F9AA3176DC588A1F2C25514 /* GitHubBar.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GitHubBar.entitlements; sourceTree = "<group>"; };
 		38380275717FD18A95869865 /* PopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverView.swift; sourceTree = "<group>"; };
 		3B9813F72CF2F4CB20333095 /* UpdateControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateControllerTests.swift; sourceTree = "<group>"; };
@@ -63,6 +92,7 @@
 		464705010379FB9898CD5D01 /* AppearanceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceController.swift; sourceTree = "<group>"; };
 		48506E36134F710544DC49CA /* StatusItemMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemMenu.swift; sourceTree = "<group>"; };
 		4E92E7653755A1285ACBB51A /* GlobalHotKeyController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotKeyController.swift; sourceTree = "<group>"; };
+		538602EE58F02DB5398BD17A /* WorkspaceAgentReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceAgentReviewView.swift; sourceTree = "<group>"; };
 		5CE41C26ABE21A457E830821 /* ApplicationMenuController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationMenuController.swift; sourceTree = "<group>"; };
 		685E6864EC15CF08046AF835 /* AccountConnectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountConnectionView.swift; sourceTree = "<group>"; };
 		6FCA7F94A99E37FDFC8C9470 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -73,9 +103,11 @@
 		995B46C428EA3A7FD5CFB7E0 /* GitHubBarTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GitHubBarTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9DC54AA23EDF526A120E685B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A08B252F35CACF12F8B1CA03 /* StatusItemController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemController.swift; sourceTree = "<group>"; };
+		A7B32B41B61F3D4022C4D61A /* WorkspaceReviewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceReviewTests.swift; sourceTree = "<group>"; };
 		A9BBAE50AD7E339CECA2EAA2 /* WorkloadSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkloadSection.swift; sourceTree = "<group>"; };
 		AA99EBD1853442455EADF839 /* GitHubBarCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = GitHubBarCore; path = Packages/GitHubBarCore; sourceTree = SOURCE_ROOT; };
 		B1BBCCEA1002710C169F6641 /* AppActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppActions.swift; sourceTree = "<group>"; };
+		B474A906ED2F207BDD606D17 /* WorkspaceReviewContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceReviewContext.swift; sourceTree = "<group>"; };
 		B6CF0FB24B12896466FD2E72 /* PullRequestRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PullRequestRow.swift; sourceTree = "<group>"; };
 		B84D614FD57185277F2F77F2 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
 		BDB1DBB43398AAD41650BE70 /* WorkspaceErrorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceErrorTests.swift; sourceTree = "<group>"; };
@@ -100,6 +132,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E386B24770E9800DA14FBC65 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E1FD452F6CE24DF6F82682C3 /* GitHubBarCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -117,6 +157,7 @@
 			isa = PBXGroup;
 			children = (
 				AA99EBD1853442455EADF839 /* GitHubBarCore */,
+				30A607EF612C8971F982873B /* GitHubBarCore */,
 			);
 			path = Packages;
 			sourceTree = "<group>";
@@ -126,6 +167,7 @@
 			children = (
 				3B9813F72CF2F4CB20333095 /* UpdateControllerTests.swift */,
 				BDB1DBB43398AAD41650BE70 /* WorkspaceErrorTests.swift */,
+				A7B32B41B61F3D4022C4D61A /* WorkspaceReviewTests.swift */,
 			);
 			path = GitHubBarTests;
 			sourceTree = "<group>";
@@ -162,6 +204,30 @@
 			path = Resources;
 			sourceTree = "<group>";
 		};
+		30A607EF612C8971F982873B /* GitHubBarCore */ = {
+			isa = PBXGroup;
+			children = (
+				3DE63963028351DFFD31DD27 /* CLI */,
+			);
+			path = GitHubBarCore;
+			sourceTree = "<group>";
+		};
+		39064CDB31860F3B774DF740 /* GitHubBarWorkspaceCLI */ = {
+			isa = PBXGroup;
+			children = (
+				10BD98E8C7F2AD6A97FECDB8 /* main.swift */,
+			);
+			path = GitHubBarWorkspaceCLI;
+			sourceTree = "<group>";
+		};
+		3DE63963028351DFFD31DD27 /* CLI */ = {
+			isa = PBXGroup;
+			children = (
+				39064CDB31860F3B774DF740 /* GitHubBarWorkspaceCLI */,
+			);
+			path = CLI;
+			sourceTree = "<group>";
+		};
 		4DF240D8141602804745F7BE /* GitHubBar */ = {
 			isa = PBXGroup;
 			children = (
@@ -192,8 +258,10 @@
 			isa = PBXGroup;
 			children = (
 				D9A6E6B856E9CF0229E38E57 /* TerminalSessionOpener.swift */,
+				538602EE58F02DB5398BD17A /* WorkspaceAgentReviewView.swift */,
 				D09C46D2E8EF437EAFE95469 /* WorkspaceBoardView.swift */,
 				0F1741DCE7543D2E3AD1644A /* WorkspaceModel.swift */,
+				B474A906ED2F207BDD606D17 /* WorkspaceReviewContext.swift */,
 				DA9183D9C2DB406538601D33 /* WorkspaceWindowController.swift */,
 			);
 			path = Workspace;
@@ -227,6 +295,7 @@
 			children = (
 				D15FD62343E9B992072D0358 /* GitHubBar.app */,
 				995B46C428EA3A7FD5CFB7E0 /* GitHubBarTests.xctest */,
+				2AA14DE32C2192BBB303D436 /* GitHubBarWorkspaceCLI */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -267,10 +336,12 @@
 			buildPhases = (
 				E54B3F50E8F2F251A09AD86A /* Sources */,
 				4F3274C076405617B5CB1A18 /* Frameworks */,
+				B423BFA670DA4C091426BB6F /* Embed Dependencies */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				CD470D577838FCAEABDE865D /* PBXTargetDependency */,
 			);
 			name = GitHubBar;
 			packageProductDependencies = (
@@ -280,6 +351,25 @@
 			productName = GitHubBar;
 			productReference = D15FD62343E9B992072D0358 /* GitHubBar.app */;
 			productType = "com.apple.product-type.application";
+		};
+		BCB09E8CF194DFBD818A567F /* GitHubBarWorkspaceCLI */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0F1D002C7B6F4EE76D1AF4DA /* Build configuration list for PBXNativeTarget "GitHubBarWorkspaceCLI" */;
+			buildPhases = (
+				C40D13A61E79E4606C76AD3E /* Sources */,
+				E386B24770E9800DA14FBC65 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = GitHubBarWorkspaceCLI;
+			packageProductDependencies = (
+				582165A1E29B393B7A830970 /* GitHubBarCore */,
+			);
+			productName = GitHubBarWorkspaceCLI;
+			productReference = 2AA14DE32C2192BBB303D436 /* GitHubBarWorkspaceCLI */;
+			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
 
@@ -311,6 +401,7 @@
 			projectRoot = "";
 			targets = (
 				B891217D4FC14D04B6B1A200 /* GitHubBar */,
+				BCB09E8CF194DFBD818A567F /* GitHubBarWorkspaceCLI */,
 				74C204BD8752C53AECD260EE /* GitHubBarTests */,
 			);
 		};
@@ -323,6 +414,15 @@
 			files = (
 				A9BA698E6D882DD71A2D7480 /* UpdateControllerTests.swift in Sources */,
 				28A8B231972DDE1645DFDE47 /* WorkspaceErrorTests.swift in Sources */,
+				382C674DE3CD8C6A3D7ACA6C /* WorkspaceReviewTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C40D13A61E79E4606C76AD3E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				92C6A64DBFF91472F4150623 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -356,8 +456,10 @@
 				D40BE45B4EE4BB1462A34A4B /* TerminalSessionOpener.swift in Sources */,
 				6C570A0F606EA7D7AE56A2A2 /* UpdateController.swift in Sources */,
 				DE1ED625BE58BCFBBAF98CC9 /* WorkloadSection.swift in Sources */,
+				EBB4CCD9563EED75CF8B3CA4 /* WorkspaceAgentReviewView.swift in Sources */,
 				DB5188081DFCC108113FB924 /* WorkspaceBoardView.swift in Sources */,
 				C06AB30D1D8A92AC70DCCBCA /* WorkspaceModel.swift in Sources */,
+				C3E5DA5DE8468DC3CE0C840E /* WorkspaceReviewContext.swift in Sources */,
 				D0F5EB9ED948C3A47491C2D1 /* WorkspaceWindowController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -369,6 +471,11 @@
 			isa = PBXTargetDependency;
 			target = B891217D4FC14D04B6B1A200 /* GitHubBar */;
 			targetProxy = 8AD9B34FB18D02E32A1E2CF3 /* PBXContainerItemProxy */;
+		};
+		CD470D577838FCAEABDE865D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BCB09E8CF194DFBD818A567F /* GitHubBarWorkspaceCLI */;
+			targetProxy = 0ECF3D6BB0C00F1C566CFB2F /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -388,6 +495,43 @@
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GitHubBar.app/Contents/MacOS/GitHubBar";
 			};
 			name = Release;
+		};
+		28CF57EB10B2BAD0A69FA5DE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				OTHER_SWIFT_FLAGS = "$(inherited) -parse-as-library";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.nikovert.githubbar.workspace-cli";
+				PRODUCT_NAME = GitHubBarWorkspaceCLI;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		3AE0B31F56C9BEEBA461EC33 /* Stable */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				OTHER_CODE_SIGN_FLAGS = "--timestamp";
+				OTHER_SWIFT_FLAGS = "$(inherited) -parse-as-library";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.nikovert.githubbar.workspace-cli";
+				PRODUCT_NAME = GitHubBarWorkspaceCLI;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Stable;
 		};
 		4A8491EA77F38B760EF662D4 /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -496,6 +640,24 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) GITHUBBAR_STABLE";
 			};
 			name = Stable;
+		};
+		793E831C6847893CDF9F8505 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				OTHER_SWIFT_FLAGS = "$(inherited) -parse-as-library";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.nikovert.githubbar.workspace-cli";
+				PRODUCT_NAME = GitHubBarWorkspaceCLI;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
 		};
 		7C173357AC54452EDF3DF09E /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -679,6 +841,16 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		0F1D002C7B6F4EE76D1AF4DA /* Build configuration list for PBXNativeTarget "GitHubBarWorkspaceCLI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				28CF57EB10B2BAD0A69FA5DE /* Debug */,
+				793E831C6847893CDF9F8505 /* Release */,
+				3AE0B31F56C9BEEBA461EC33 /* Stable */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		3F9729B1804DD8BEB4CFB8B4 /* Build configuration list for PBXNativeTarget "GitHubBar" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -731,6 +903,10 @@
 
 /* Begin XCSwiftPackageProductDependency section */
 		10697BA3CB9F8BCD98262056 /* GitHubBarCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = GitHubBarCore;
+		};
+		582165A1E29B393B7A830970 /* GitHubBarCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = GitHubBarCore;
 		};

@@ -23,6 +23,17 @@ enum TerminalSessionOpener {
         } else {
             command = "cd \(shellQuote(session.worktreePath))"
         }
+        try run(command)
+    }
+
+    static func openDirectory(_ path: String) throws {
+        guard path.hasPrefix("/"), FileManager.default.fileExists(atPath: path) else {
+            throw Error.failed("The review worktree is no longer available at \(path).")
+        }
+        try run("cd \(shellQuote(path))")
+    }
+
+    private static func run(_ command: String) throws {
         let source = """
         tell application "Terminal"
             do script "\(appleScriptQuote(command))"

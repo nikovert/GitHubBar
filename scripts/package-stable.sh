@@ -30,6 +30,14 @@ if [[ "$GITHUBBAR_SIGNING_IDENTITY" != "Developer ID Application:"* ]]; then
   exit 1
 fi
 
+build_root="${GITHUBBAR_BUILD_DIR:-$repo_root/.build/stable}"
+dist_dir="${GITHUBBAR_DIST_DIR:-$repo_root/dist/stable}"
+source "$repo_root/scripts/package-paths.sh"
+githubbar_validate_package_paths "$repo_root" "$build_root" "$dist_dir" \
+  "$GITHUBBAR_VERSION" "$GITHUBBAR_BUILD_NUMBER"
+build_root="${build_root:A}"
+dist_dir="${dist_dir:A}"
+
 if ! command -v xcodebuild >/dev/null || ! xcodebuild -version >/dev/null 2>&1; then
   print -u2 "A full Xcode installation is required for stable archives."
   exit 1
@@ -39,8 +47,6 @@ if ! security find-identity -v -p codesigning | rg -Fq "$GITHUBBAR_SIGNING_IDENT
   exit 1
 fi
 
-build_root="${GITHUBBAR_BUILD_DIR:-$repo_root/.build/stable}"
-dist_dir="${GITHUBBAR_DIST_DIR:-$repo_root/dist/stable}"
 derived_data="$build_root/DerivedData"
 archive_path="$build_root/GitHubBar.xcarchive"
 app_path="$archive_path/Products/Applications/GitHubBar.app"
@@ -52,7 +58,7 @@ notary_result="$build_root/notary-result.json"
 notary_log="$build_root/notary-log.json"
 sparkle_account="${GITHUBBAR_SPARKLE_KEY_ACCOUNT:-com.franciscomoretti.githubbar}"
 
-rm -rf "$build_root"
+rm -rf -- "$build_root"
 mkdir -p "$build_root" "$dist_dir" "$updates_dir"
 
 xcodegen generate
@@ -78,12 +84,20 @@ if [[ ! -d "$app_path" ]]; then
   exit 1
 fi
 
-lipo "$app_path/Contents/MacOS/GitHubBar" -verify_arch arm64 x86_64
+for executable in GitHubBar GitHubBarWorkspaceCLI; do
+  binary="$app_path/Contents/MacOS/$executable"
+  if [[ ! -x "$binary" ]]; then
+    print -u2 "Stable archive is missing executable $executable."
+    exit 1
+  fi
+  lipo "$binary" -verify_arch arm64 x86_64
+  codesign --verify --strict --verbose=2 "$binary"
+  if ! codesign -dv --verbose=4 "$binary" 2>&1 | rg 'flags=.*runtime' >/dev/null; then
+    print -u2 "Stable executable $executable is missing the hardened runtime signature flag."
+    exit 1
+  fi
+done
 codesign --verify --deep --strict --verbose=2 "$app_path"
-if ! codesign -dv --verbose=4 "$app_path" 2>&1 | rg -q "flags=.*runtime"; then
-  print -u2 "Stable app is missing the hardened runtime signature flag."
-  exit 1
-fi
 
 entitlements_file="$build_root/effective-entitlements.plist"
 codesign -d --entitlements :- "$app_path" > "$entitlements_file" 2>/dev/null
@@ -186,3 +200,4 @@ shasum -a 256 "$final_zip" > "$final_zip.sha256"
 print "Created notarized stable artifact: $final_zip"
 print "Created signed appcast: $dist_dir/appcast.xml"
 print "Architectures: $(lipo -archs "$app_path/Contents/MacOS/GitHubBar")"
+print "CLI architectures: $(lipo -archs "$app_path/Contents/MacOS/GitHubBarWorkspaceCLI")"

@@ -30,6 +30,9 @@
   Right-click a PR to edit its board entry, or open **Workspace Board…** from the menu.
 - Let local agents update the board with the `GitHubBarWorkspaceCLI` command. See
   [Agent workspace guide](docs/agent-workspace.md).
+- Connect an optional Giles worker for queued agent reviews, policy, and progress using
+  the bundled CLI. Approved defaults: fixes off, comments on own PRs only, replies off.
+  See [Agent review integration and packaging](docs/agent-reviews.md).
 
 ## Built for review at scale
 
@@ -89,6 +92,14 @@ Build and run the `GitHubBar` scheme in Xcode. Install and authenticate `gh`, th
 local checkout and worktree root in **Workspace Board… → Workspace setup** before launching
 an agent. Install `codex` or `claude` on your `PATH`. macOS will ask permission to automate
 Terminal the first time you jump to a pinned tmux session.
+
+Xcode builds and both packaging scripts embed `GitHubBarWorkspaceCLI` in the app's
+`Contents/MacOS` directory. Run
+`scripts/package-validation.sh` to create a universal arm64/x86_64 ZIP in `dist/`.
+This builds locally without installing the app. See the
+[packaging checks and path restrictions](docs/agent-reviews.md#build-and-verify)
+before overriding output directories. Stable packaging requires the release credentials
+and notarization workflow below.
 
 Run `scripts/check.sh` before submitting a pull request. Release details are in the [stable release runbook](docs/releases/stable-release-runbook.md) and [validation guide](docs/releases/validation-release.md).
 

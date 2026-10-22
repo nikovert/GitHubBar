@@ -15,6 +15,7 @@ public struct PullRequestPresentation: Codable, Equatable, Identifiable, Sendabl
     public let updatedAt: Date
     public let requestedReviewers: [ReviewerPresentation]?
     public let reviewers: [ReviewerPresentation]
+    public let headSHA: String?
 
     public init(
         id: String,
@@ -30,7 +31,8 @@ public struct PullRequestPresentation: Codable, Equatable, Identifiable, Sendabl
         stackMembership: PullRequestStackMembership? = nil,
         updatedAt: Date,
         requestedReviewers: [ReviewerPresentation]? = [],
-        reviewers: [ReviewerPresentation]
+        reviewers: [ReviewerPresentation],
+        headSHA: String? = nil
     ) {
         self.id = id
         self.repositoryID = repositoryID
@@ -46,6 +48,7 @@ public struct PullRequestPresentation: Codable, Equatable, Identifiable, Sendabl
         self.updatedAt = updatedAt
         self.requestedReviewers = requestedReviewers
         self.reviewers = reviewers
+        self.headSHA = headSHA
     }
 
     public var authoredSection: AuthoredPullRequestSection? {
@@ -68,6 +71,7 @@ public struct PullRequestPresentation: Codable, Equatable, Identifiable, Sendabl
         case id, repositoryID, repositoryNameWithOwner
         case number, title, url, isDraft, state, author
         case reviewDecision, stackMembership, updatedAt, requestedReviewers, reviewers
+        case headSHA
     }
 
     public init(from decoder: any Decoder) throws {
@@ -88,6 +92,7 @@ public struct PullRequestPresentation: Codable, Equatable, Identifiable, Sendabl
         )
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
         reviewers = try container.decode([ReviewerPresentation].self, forKey: .reviewers)
+        headSHA = try container.decodeIfPresent(String.self, forKey: .headSHA)
         requestedReviewers = try container.decodeIfPresent(
             [ReviewerPresentation].self,
             forKey: .requestedReviewers
@@ -131,6 +136,7 @@ public struct ReviewerPresentation: Codable, Equatable, Identifiable, Sendable {
     public enum Kind: String, Codable, Equatable, Sendable {
         case person
         case team
+        case bot
     }
 
     public let id: String

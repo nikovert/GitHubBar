@@ -36,6 +36,12 @@ targets:
       - package: GitHubBarCore
       - package: Sparkle
         product: Sparkle
+      - target: GitHubBarWorkspaceCLI
+        link: false
+        embed: true
+        codeSign: true
+        copy:
+          destination: executables
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.nikovert.githubbar
@@ -53,6 +59,26 @@ targets:
         Stable:
           CODE_SIGN_STYLE: Manual
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) GITHUBBAR_STABLE"
+          OTHER_CODE_SIGN_FLAGS: "--timestamp"
+  GitHubBarWorkspaceCLI:
+    type: tool
+    platform: macOS
+    sources:
+      - path: Packages/GitHubBarCore/CLI/GitHubBarWorkspaceCLI
+    dependencies:
+      - package: GitHubBarCore
+        product: GitHubBarCore
+    settings:
+      base:
+        PRODUCT_NAME: GitHubBarWorkspaceCLI
+        PRODUCT_BUNDLE_IDENTIFIER: com.nikovert.githubbar.workspace-cli
+        OTHER_SWIFT_FLAGS: "$(inherited) -parse-as-library"
+        SKIP_INSTALL: YES
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_HARDENED_RUNTIME: YES
+      configs:
+        Stable:
+          CODE_SIGN_STYLE: Manual
           OTHER_CODE_SIGN_FLAGS: "--timestamp"
   GitHubBarTests:
     type: bundle.unit-test

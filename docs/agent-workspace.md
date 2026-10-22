@@ -36,7 +36,16 @@ stop tmux or delete files.
 
 ## Let agents update the board
 
-From the repository root, build the command-line client:
+Every validation ZIP and stable app includes the command-line client at
+`GitHubBar.app/Contents/MacOS/GitHubBarWorkspaceCLI`. Xcode's `GitHubBar` scheme also
+builds and embeds it. For an app installed in `/Applications`, inspect the board with:
+
+```bash
+"/Applications/GitHubBar.app/Contents/MacOS/GitHubBarWorkspaceCLI" show
+```
+
+Use your actual app location if it is elsewhere. A separate Swift build is optional;
+from the repository root:
 
 ```bash
 swift build --package-path Packages/GitHubBarCore --product GitHubBarWorkspaceCLI
@@ -67,10 +76,21 @@ For testing without touching your real board, set `GITHUBBAR_WORKSPACE_DIR` to a
 absolute temporary directory when invoking the CLI. The app always uses its normal
 Application Support location.
 
+## Agent review integration
+
+The optional Giles integration uses the bundled CLI's `agent` JSON bridge for review
+requests, policy, priority, and progress. It stores review state separately in
+`agent-reviews.json`. See [Agent reviews](agent-reviews.md) for setup, approved defaults,
+queue behavior, and packaging checks. The existing external Giles installation/path
+setup remains optional; GitHubBar does not bundle or start a Giles daemon.
+For custom clients, see the [agent review protocol](agent-review-protocol.md).
+
 ## Boundaries
 
-GitHubBar does not automatically run a code review or post review comments. A pinned
-agent stays local until you explicitly ask it to review or publish something. The board
-can contain private notes and paths, so do not commit `workspace.json` to a repository.
+A pinned Codex or Claude session stays local until you explicitly ask it to review or
+publish something. Giles review publication requires the optional integration and its
+effective policy: fixes default to off, comments to own PRs only, and replies to off.
+The board and review queue can contain private notes, instructions, and paths, so do not
+commit `workspace.json` or `agent-reviews.json` to a repository.
 This fork currently opens linked sessions in Apple Terminal; it does not re-focus an
 existing Terminal tab, but attaches to the same tmux session.

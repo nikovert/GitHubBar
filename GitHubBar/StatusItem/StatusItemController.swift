@@ -45,6 +45,7 @@ final class StatusItemController: NSObject {
     }
 
     private func apply(_ state: AppPresentationState) {
+        workspaceModel.updateWorkload(state)
         guard let button = statusItem.button else { return }
         let accountLogin = connectedAccountLogin(in: state)
         if avatarCacheAccountLogin != accountLogin {

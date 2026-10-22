@@ -134,6 +134,9 @@ extension StatusItemController: NSMenuDelegate {
                     stackRowContext: entry.stackRowContext
                 )
             )
+            if entry.stackRowContext == nil {
+                statusMenu.addItem(agentReviewItem(for: entry.pullRequest))
+            }
         }
         if entries.count > Self.pullRequestLimit {
             statusMenu.addItem(seeAllItem(for: section))
@@ -233,13 +236,17 @@ extension StatusItemController: NSMenuDelegate {
         let board = subject.map {
             workspaceModel.document.resolvedEntry(for: $0, stackRoot: stackRoot)
         }
+        let context = workspaceModel.reviewContext(for: pullRequest)
+        let priority = context.priority(in: workspaceModel.document)
+        let reviewStatus = workspaceModel.latestReview(for: context).map {
+            WorkspaceReviewContext.status($0, currentSHA: context.headSHA)
+        }
         let boardLabel = board.map { entry -> String in
-            let priority = entry.priority == .none ? "" : entry.priority.rawValue.capitalized
             let tags = workspaceModel.document.tags
                 .filter { entry.tagIDs.contains($0.id) && !$0.isArchived }
                 .map(\.name).joined(separator: ", ")
-            return [priority, tags].filter { !$0.isEmpty }.joined(separator: " · ")
-        } ?? ""
+            return [priority.label, tags, reviewStatus ?? ""].filter { !$0.isEmpty }.joined(separator: " · ")
+        } ?? priority.label
         var pinnedSessions = subject.map { workspaceModel.document.sessions(for: $0) } ?? []
         if stackRowContext == nil, let stackRoot {
             pinnedSessions += workspaceModel.document.sessions(for: .stack(stackRoot))
@@ -309,6 +316,7 @@ extension StatusItemController: NSMenuDelegate {
         item.isEnabled = true
         item.toolTip = pullRequestTooltip(for: pullRequest, stack: stackRowContext?.stack)
             + (boardLabel.isEmpty ? "" : " · \(boardLabel)")
+            + " · \(priority.reason)"
             + " · Right-click for workspace"
         if let stackRowContext {
             item.submenu = stackSubmenu(for: stackRowContext.stack)
@@ -320,6 +328,22 @@ extension StatusItemController: NSMenuDelegate {
                 keepsMenuOpen: keepsMenuOpenAfterOpening
             )
         }
+        return item
+    }
+
+    private func agentReviewItem(for pullRequest: PullRequestPresentation) -> NSMenuItem {
+        let context = workspaceModel.reviewContext(for: pullRequest)
+        let latest = workspaceModel.latestReview(for: context)
+        let item = NSMenuItem(
+            title: "\(latest == nil ? "Request" : "Re-request") agent review for #\(pullRequest.number)",
+            action: #selector(requestAgentReview(_:)), keyEquivalent: ""
+        )
+        item.target = self
+        item.representedObject = StatusMenuReviewTarget(pullRequest: pullRequest)
+        item.indentationLevel = 1
+        item.isEnabled = workspaceModel.reviewUnavailableReason(for: context) == nil
+        item.toolTip = workspaceModel.reviewUnavailableReason(for: context)
+            ?? "Request Giles review; open the workspace for findings and policy controls."
         return item
     }
 
@@ -350,6 +374,7 @@ extension StatusItemController: NSMenuDelegate {
                     keepsMenuOpenAfterOpening: true
                 )
             )
+            submenu.addItem(agentReviewItem(for: pullRequest))
         }
         if let navigationURL = stack.navigationURL {
             let viewStack = NSMenuItem(
@@ -574,8 +599,14 @@ extension StatusItemController: NSMenuDelegate {
         let section = stackMemberSection.map {
             "\($0.stackMemberDisplay.accessibilityLabel). "
         } ?? ""
+        let context = workspaceModel.reviewContext(for: pullRequest)
+        let priority = context.priority(in: workspaceModel.document)
+        let review = workspaceModel.latestReview(for: context).map {
+            WorkspaceReviewContext.status($0, currentSHA: context.headSHA)
+        } ?? "Not requested"
         return "\(pullRequest.repositoryNameWithOwner) number \(pullRequest.number), " +
-            "\(pullRequest.title). \(state)\(stackLabel)\(section)\(author)\(reviewers)."
+            "\(pullRequest.title). \(state)\(stackLabel)\(section)\(author)\(reviewers). " +
+            "Priority: \(priority.label), \(priority.reason). Agent review: \(review)."
     }
 
     private func stackMemberSection(
@@ -673,6 +704,14 @@ extension StatusItemController: NSMenuDelegate {
     @objc private func focusSessionForItem(_ sender: NSMenuItem) {
         guard let target = sender.representedObject as? StatusMenuSessionTarget else { return }
         workspaceModel.focus(target.session)
+    }
+
+    @objc private func requestAgentReview(_ sender: NSMenuItem) {
+        guard let target = sender.representedObject as? StatusMenuReviewTarget else { return }
+        workspaceModel.requestReview(workspaceModel.reviewContext(for: target.pullRequest))
+        if let key = try? PullRequestKey(url: target.pullRequest.url) {
+            actions.openWorkspace(.pullRequest(key))
+        }
     }
 
     @objc private func openAbout() {
@@ -906,6 +945,12 @@ private final class StatusMenuSessionTarget: NSObject {
     let session: AgentSessionLink
 
     init(session: AgentSessionLink) { self.session = session }
+}
+
+private final class StatusMenuReviewTarget: NSObject {
+    let pullRequest: PullRequestPresentation
+
+    init(pullRequest: PullRequestPresentation) { self.pullRequest = pullRequest }
 }
 
 @MainActor
