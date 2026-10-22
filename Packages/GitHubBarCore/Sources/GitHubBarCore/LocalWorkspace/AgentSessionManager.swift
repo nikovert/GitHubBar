@@ -101,13 +101,13 @@ public actor AgentSessionManager {
 
     public func stop(id: UUID) async throws {
         let session = try await storedSession(id: id)
-        if let name = session.tmuxSessionName {
+        if let target = session.tmuxSessionTarget {
             guard let tmuxURL else { throw AgentSessionLaunchError.missingExecutable("tmux") }
             let exists = await commandRunner.run(
-                executableURL: tmuxURL, arguments: ["has-session", "-t", "=\(name)"], environment: [:]
+                executableURL: tmuxURL, arguments: ["has-session", "-t", target], environment: [:]
             )
             if exists.exitCode == 0 {
-                try await run(tmuxURL, arguments: ["kill-session", "-t", "=\(name)"])
+                try await run(tmuxURL, arguments: ["kill-session", "-t", target])
             }
         }
         try await store.update { document in
@@ -118,7 +118,8 @@ public actor AgentSessionManager {
 
     public func restart(id: UUID) async throws -> AgentSessionLink {
         let session = try await storedSession(id: id)
-        guard let name = session.tmuxSessionName, let tmuxURL else {
+        guard let name = session.tmuxSessionName,
+              let target = session.tmuxSessionTarget, let tmuxURL else {
             throw AgentSessionLaunchError.missingExecutable("tmux")
         }
         guard FileManager.default.fileExists(atPath: session.worktreePath) else {
@@ -131,7 +132,7 @@ public actor AgentSessionManager {
             throw AgentSessionLaunchError.missingExecutable(command)
         }
         let exists = await commandRunner.run(
-            executableURL: tmuxURL, arguments: ["has-session", "-t", "=\(name)"], environment: [:]
+            executableURL: tmuxURL, arguments: ["has-session", "-t", target], environment: [:]
         )
         if exists.exitCode != 0 {
             let script = "exec \(Self.shellQuote(agentURL.path))"
@@ -152,9 +153,9 @@ public actor AgentSessionManager {
         guard let tmuxURL else { return document.sessions }
         var sessions = document.sessions
         for index in sessions.indices {
-            guard let name = sessions[index].tmuxSessionName else { continue }
+            guard let target = sessions[index].tmuxSessionTarget else { continue }
             let result = await commandRunner.run(
-                executableURL: tmuxURL, arguments: ["has-session", "-t", "=\(name)"], environment: [:]
+                executableURL: tmuxURL, arguments: ["has-session", "-t", target], environment: [:]
             )
             let liveState: AgentSessionState = result.exitCode == 0 ? .running : .stopped
             if sessions[index].state != liveState {

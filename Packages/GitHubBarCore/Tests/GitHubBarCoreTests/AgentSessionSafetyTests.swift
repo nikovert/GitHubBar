@@ -157,7 +157,7 @@ final class AgentSessionSafetyTests: XCTestCase {
                 url: URL(string: "https://github.com/acme/widget/pull/12")!
             )),
             agent: .codex, worktreePath: directory.path,
-            tmuxSessionName: "work", managedWorktree: false, state: .running
+            tmuxSessionName: "work.1", managedWorktree: false, state: .running
         )
         var document = LocalWorkspaceDocument.empty
         document.setSession(session)
@@ -172,6 +172,22 @@ final class AgentSessionSafetyTests: XCTestCase {
 
         let killed = await runner.killedSessions
         XCTAssertTrue(killed.isEmpty, "A different session must not be killed")
+        let checked = await runner.checkedSessions
+        XCTAssertEqual(checked, ["=work.1:"])
+    }
+
+    func testProcessRunnerDrainsLargeOutputAndErrorStreams() async throws {
+        let result = await ProcessCommandRunner().run(
+            executableURL: URL(fileURLWithPath: "/bin/sh"),
+            arguments: ["-c", "seq 1 50000; seq 1 50000 >&2"],
+            environment: [:]
+        )
+
+        XCTAssertEqual(result.exitCode, 0)
+        XCTAssertTrue(result.standardOutput.hasPrefix("1\n2\n3\n"))
+        XCTAssertTrue(result.standardOutput.hasSuffix("50000\n"))
+        XCTAssertTrue(result.standardError.hasPrefix("1\n2\n3\n"))
+        XCTAssertTrue(result.standardError.hasSuffix("50000\n"))
     }
 
     func testIgnoredFileBlocksWorktreeRemovalWhenGitHidesUntrackedFiles() async throws {
@@ -262,14 +278,16 @@ private actor WrongRemoteRunner: CommandRunning {
 
 private actor PrefixMatchingTmuxRunner: CommandRunning {
     private(set) var killedSessions: [String] = []
+    private(set) var checkedSessions: [String] = []
 
     func run(
         executableURL: URL, arguments: [String], environment: [String: String]
     ) async -> CommandResult {
         if arguments.first == "has-session" {
             let target = arguments.last ?? ""
+            checkedSessions.append(target)
             return CommandResult(
-                exitCode: target == "work" ? 0 : 1, standardOutput: "", standardError: ""
+                exitCode: target == "=work.1" ? 0 : 1, standardOutput: "", standardError: ""
             )
         }
         if arguments.first == "kill-session" {

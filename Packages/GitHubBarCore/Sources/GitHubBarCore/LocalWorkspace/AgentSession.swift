@@ -22,6 +22,10 @@ public struct AgentSessionLink: Codable, Equatable, Identifiable, Sendable {
     public let createdAt: Date
     public var lastSeenAt: Date?
 
+    public var tmuxSessionTarget: String? {
+        tmuxSessionName.map { "=\($0):" }
+    }
+
     public init(
         id: UUID = UUID(),
         subject: BoardSubject,
