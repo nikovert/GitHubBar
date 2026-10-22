@@ -36,11 +36,10 @@ final class SnapshotStoreTests: XCTestCase {
 
         try await store.save(snapshot)
 
-        XCTAssertEqual(
-            try await store.load(hostname: "github.com", accountLogin: "FranciscoMoretti"),
-            snapshot
-        )
-        XCTAssertNil(try await store.load(hostname: "github.com", accountLogin: "someone-else"))
+        let loaded = try await store.load(hostname: "github.com", accountLogin: "FranciscoMoretti")
+        XCTAssertEqual(loaded, snapshot)
+        let otherAccount = try await store.load(hostname: "github.com", accountLogin: "someone-else")
+        XCTAssertNil(otherAccount)
         let fileURL = try XCTUnwrap(
             FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil).first
         )

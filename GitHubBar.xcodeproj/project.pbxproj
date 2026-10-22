@@ -18,6 +18,7 @@
 		613BD46ADBAE74F5476ADF1B /* GlobalHotKeyController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E92E7653755A1285ACBB51A /* GlobalHotKeyController.swift */; };
 		65679A108BD941742103A172 /* MacLaunchAtLoginController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 413C65D56097A21D67B2DFEC /* MacLaunchAtLoginController.swift */; };
 		6C570A0F606EA7D7AE56A2A2 /* UpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C39E485BC4A03542878D61F2 /* UpdateController.swift */; };
+		7F3C916A59C7CBD9D337C4B8 /* AppearanceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 464705010379FB9898CD5D01 /* AppearanceController.swift */; };
 		92D81BE0493C6FAEDF136177 /* RepositoryScopeControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = D582835D6F15750A7B876847 /* RepositoryScopeControl.swift */; };
 		981043800D9A3D281B9FB819 /* MenuActionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78AE4A990C81D192A301DE12 /* MenuActionRow.swift */; };
 		A9BA698E6D882DD71A2D7480 /* UpdateControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B9813F72CF2F4CB20333095 /* UpdateControllerTests.swift */; };
@@ -26,10 +27,14 @@
 		B172F00F0C2EC95745C3DF43 /* AvatarImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 802629216ED5CE8877D7837C /* AvatarImageCache.swift */; };
 		B57BECFC45EE5DB408206EB1 /* StatusMenuSizing.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6A38F19571B0CCF0410AD9F /* StatusMenuSizing.swift */; };
 		B5EB0FFF8FE8ACFF9C185652 /* PullRequestRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6CF0FB24B12896466FD2E72 /* PullRequestRow.swift */; };
+		C06AB30D1D8A92AC70DCCBCA /* WorkspaceModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F1741DCE7543D2E3AD1644A /* WorkspaceModel.swift */; };
 		C0EFC1B2F18736A240AC0F16 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DC54AA23EDF526A120E685B /* SettingsView.swift */; };
 		C4365C499C9F8EFB21D56CBC /* PopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38380275717FD18A95869865 /* PopoverView.swift */; };
+		D0F5EB9ED948C3A47491C2D1 /* WorkspaceWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA9183D9C2DB406538601D33 /* WorkspaceWindowController.swift */; };
 		D10A85FE5C3AF7F100FAF722 /* StatusItemMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48506E36134F710544DC49CA /* StatusItemMenu.swift */; };
+		D40BE45B4EE4BB1462A34A4B /* TerminalSessionOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9A6E6B856E9CF0229E38E57 /* TerminalSessionOpener.swift */; };
 		D48F19C02711831D9678C4D1 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = F6E61A749B9AF8CCF4DDD2D6 /* Sparkle */; };
+		DB5188081DFCC108113FB924 /* WorkspaceBoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D09C46D2E8EF437EAFE95469 /* WorkspaceBoardView.swift */; };
 		DE1ED625BE58BCFBBAF98CC9 /* WorkloadSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9BBAE50AD7E339CECA2EAA2 /* WorkloadSection.swift */; };
 		E4D2AA6C419BAA7A57217BE8 /* StatusItemController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A08B252F35CACF12F8B1CA03 /* StatusItemController.swift */; };
 		EA70C75EAE03957D64C8A89A /* IdentityAvatarImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8F49D83D230FB079EF27B2 /* IdentityAvatarImage.swift */; };
@@ -48,11 +53,13 @@
 
 /* Begin PBXFileReference section */
 		0CC8053760D622F2FF04D61B /* StatusIconRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusIconRenderer.swift; sourceTree = "<group>"; };
+		0F1741DCE7543D2E3AD1644A /* WorkspaceModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceModel.swift; sourceTree = "<group>"; };
 		15A06FCA62CDE78A733A5E75 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		2F9AA3176DC588A1F2C25514 /* GitHubBar.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GitHubBar.entitlements; sourceTree = "<group>"; };
 		38380275717FD18A95869865 /* PopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverView.swift; sourceTree = "<group>"; };
 		3B9813F72CF2F4CB20333095 /* UpdateControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateControllerTests.swift; sourceTree = "<group>"; };
 		413C65D56097A21D67B2DFEC /* MacLaunchAtLoginController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacLaunchAtLoginController.swift; sourceTree = "<group>"; };
+		464705010379FB9898CD5D01 /* AppearanceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceController.swift; sourceTree = "<group>"; };
 		48506E36134F710544DC49CA /* StatusItemMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemMenu.swift; sourceTree = "<group>"; };
 		4E92E7653755A1285ACBB51A /* GlobalHotKeyController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotKeyController.swift; sourceTree = "<group>"; };
 		5CE41C26ABE21A457E830821 /* ApplicationMenuController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationMenuController.swift; sourceTree = "<group>"; };
@@ -72,9 +79,12 @@
 		B84D614FD57185277F2F77F2 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
 		C39E485BC4A03542878D61F2 /* UpdateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateController.swift; sourceTree = "<group>"; };
 		CC8F49D83D230FB079EF27B2 /* IdentityAvatarImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentityAvatarImage.swift; sourceTree = "<group>"; };
+		D09C46D2E8EF437EAFE95469 /* WorkspaceBoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceBoardView.swift; sourceTree = "<group>"; };
 		D15FD62343E9B992072D0358 /* GitHubBar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GitHubBar.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D582835D6F15750A7B876847 /* RepositoryScopeControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryScopeControl.swift; sourceTree = "<group>"; };
 		D6A38F19571B0CCF0410AD9F /* StatusMenuSizing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusMenuSizing.swift; sourceTree = "<group>"; };
+		D9A6E6B856E9CF0229E38E57 /* TerminalSessionOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalSessionOpener.swift; sourceTree = "<group>"; };
+		DA9183D9C2DB406538601D33 /* WorkspaceWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceWindowController.swift; sourceTree = "<group>"; };
 		DD9F73DA43CC365AD4AB94DE /* SparkleUpdateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SparkleUpdateController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -159,6 +169,7 @@
 				664BF2130F661C37F664BE8B /* Shared */,
 				510DF463139BB7332C9A1393 /* StatusItem */,
 				FB7B75FB3ED8350CA3FFC76A /* Updates */,
+				56E7DED8309A7A1CF1F50C05 /* Workspace */,
 			);
 			path = GitHubBar;
 			sourceTree = "<group>";
@@ -172,6 +183,17 @@
 				D6A38F19571B0CCF0410AD9F /* StatusMenuSizing.swift */,
 			);
 			path = StatusItem;
+			sourceTree = "<group>";
+		};
+		56E7DED8309A7A1CF1F50C05 /* Workspace */ = {
+			isa = PBXGroup;
+			children = (
+				D9A6E6B856E9CF0229E38E57 /* TerminalSessionOpener.swift */,
+				D09C46D2E8EF437EAFE95469 /* WorkspaceBoardView.swift */,
+				0F1741DCE7543D2E3AD1644A /* WorkspaceModel.swift */,
+				DA9183D9C2DB406538601D33 /* WorkspaceWindowController.swift */,
+			);
+			path = Workspace;
 			sourceTree = "<group>";
 		};
 		664BF2130F661C37F664BE8B /* Shared */ = {
@@ -188,6 +210,7 @@
 			children = (
 				B1BBCCEA1002710C169F6641 /* AppActions.swift */,
 				6FCA7F94A99E37FDFC8C9470 /* AppDelegate.swift */,
+				464705010379FB9898CD5D01 /* AppearanceController.swift */,
 				5CE41C26ABE21A457E830821 /* ApplicationMenuController.swift */,
 				15A06FCA62CDE78A733A5E75 /* AppModel.swift */,
 				4E92E7653755A1285ACBB51A /* GlobalHotKeyController.swift */,
@@ -307,6 +330,7 @@
 				20DF0B41D014762ECA024BCB /* AppActions.swift in Sources */,
 				AC9E4DF525406EC58650E413 /* AppDelegate.swift in Sources */,
 				F751EBF210E1E91BB7E0B863 /* AppModel.swift in Sources */,
+				7F3C916A59C7CBD9D337C4B8 /* AppearanceController.swift in Sources */,
 				4E861E74CE10041FA7DDD5C3 /* ApplicationMenuController.swift in Sources */,
 				B172F00F0C2EC95745C3DF43 /* AvatarImageCache.swift in Sources */,
 				613BD46ADBAE74F5476ADF1B /* GlobalHotKeyController.swift in Sources */,
@@ -325,8 +349,12 @@
 				E4D2AA6C419BAA7A57217BE8 /* StatusItemController.swift in Sources */,
 				D10A85FE5C3AF7F100FAF722 /* StatusItemMenu.swift in Sources */,
 				B57BECFC45EE5DB408206EB1 /* StatusMenuSizing.swift in Sources */,
+				D40BE45B4EE4BB1462A34A4B /* TerminalSessionOpener.swift in Sources */,
 				6C570A0F606EA7D7AE56A2A2 /* UpdateController.swift in Sources */,
 				DE1ED625BE58BCFBBAF98CC9 /* WorkloadSection.swift in Sources */,
+				DB5188081DFCC108113FB924 /* WorkspaceBoardView.swift in Sources */,
+				C06AB30D1D8A92AC70DCCBCA /* WorkspaceModel.swift in Sources */,
+				D0F5EB9ED948C3A47491C2D1 /* WorkspaceWindowController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -351,7 +379,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.franciscomoretti.githubbar.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nikovert.githubbar.tests;
 				SDKROOT = macosx;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GitHubBar.app/Contents/MacOS/GitHubBar";
 			};
@@ -425,7 +453,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				GITHUBBAR_SPARKLE_FEED_URL = "https://github.com/FranciscoMoretti/GitHubBar/releases/latest/download/appcast.xml";
+				GITHUBBAR_SPARKLE_FEED_URL = "";
 				GITHUBBAR_SPARKLE_PUBLIC_KEY = "";
 				INFOPLIST_FILE = GitHubBar/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -433,7 +461,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.franciscomoretti.githubbar;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nikovert.githubbar;
 				PRODUCT_NAME = GitHubBar;
 				SDKROOT = macosx;
 			};
@@ -449,7 +477,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				GITHUBBAR_SPARKLE_FEED_URL = "https://github.com/FranciscoMoretti/GitHubBar/releases/latest/download/appcast.xml";
+				GITHUBBAR_SPARKLE_FEED_URL = "";
 				GITHUBBAR_SPARKLE_PUBLIC_KEY = "";
 				INFOPLIST_FILE = GitHubBar/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -458,7 +486,7 @@
 				);
 				MARKETING_VERSION = 0.1.0;
 				OTHER_CODE_SIGN_FLAGS = "--timestamp";
-				PRODUCT_BUNDLE_IDENTIFIER = com.franciscomoretti.githubbar;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nikovert.githubbar;
 				PRODUCT_NAME = GitHubBar;
 				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) GITHUBBAR_STABLE";
@@ -540,7 +568,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.franciscomoretti.githubbar.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nikovert.githubbar.tests;
 				SDKROOT = macosx;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GitHubBar.app/Contents/MacOS/GitHubBar";
 			};
@@ -614,7 +642,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.franciscomoretti.githubbar.tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nikovert.githubbar.tests;
 				SDKROOT = macosx;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GitHubBar.app/Contents/MacOS/GitHubBar";
 			};
@@ -630,7 +658,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				GITHUBBAR_SPARKLE_FEED_URL = "https://github.com/FranciscoMoretti/GitHubBar/releases/latest/download/appcast.xml";
+				GITHUBBAR_SPARKLE_FEED_URL = "";
 				GITHUBBAR_SPARKLE_PUBLIC_KEY = "";
 				INFOPLIST_FILE = GitHubBar/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -638,7 +666,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.franciscomoretti.githubbar;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nikovert.githubbar;
 				PRODUCT_NAME = GitHubBar;
 				SDKROOT = macosx;
 			};

@@ -28,7 +28,8 @@ final class BackgroundRefreshVerificationTests: XCTestCase {
 
         let stream = await engine.states()
         var iterator = stream.makeAsyncIterator()
-        let latestState = try XCTUnwrap(await iterator.next())
+        let nextState = await iterator.next()
+        let latestState = try XCTUnwrap(nextState)
         XCTAssertEqual(latestState.reviewCount, 2)
     }
 

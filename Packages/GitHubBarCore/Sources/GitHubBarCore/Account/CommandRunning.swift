@@ -40,13 +40,14 @@ public actor ProcessCommandRunner: CommandRunning {
 
         do {
             try process.run()
-            process.waitUntilExit()
         } catch {
             return CommandResult(exitCode: -1, standardOutput: "", standardError: "Command could not be started")
         }
 
+        async let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
         let output = String(decoding: outputPipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
-        let error = String(decoding: errorPipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+        process.waitUntilExit()
+        let error = String(decoding: await errorData, as: UTF8.self)
         return CommandResult(exitCode: process.terminationStatus, standardOutput: output, standardError: error)
     }
 }

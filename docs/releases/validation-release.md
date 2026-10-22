@@ -1,10 +1,23 @@
 # GitHubBar validation release
 
-This artifact is the first installable validation build of GitHubBar. It is universal (`arm64` and `x86_64`), targets macOS 14 or newer, is ad-hoc signed, and is intentionally not notarized. It is not part of GitHubBar's future trusted Developer ID/Sparkle update channel.
+This fork's validation build is universal (`arm64` and `x86_64`), targets macOS 14
+or newer, is ad-hoc signed, and is intentionally not notarized. It uses the separate
+`com.nikovert.githubbar` bundle ID, so it can coexist with the upstream app. It is
+not part of GitHubBar's future trusted Developer ID/Sparkle update channel.
+
+## Fork additions
+
+- Follow system appearance or choose Light or Dark in Settings.
+- Keep local priorities, status tags, and notes for PRs and stacks.
+- See PR titles, authors, requested reviewers, review status, and stack members on the board.
+- Pin or create Codex/Claude worktree sessions and jump to them from the menu.
+
+Agent sessions use local tmux and Apple Terminal. They do not automatically review,
+comment on, or publish to GitHub.
 
 ## Install and launch
 
-1. Download the validation ZIP from the GitHub prerelease and verify its adjacent SHA-256 file.
+1. Download the validation ZIP from the [fork's GitHub prerelease](https://github.com/nikovert/GitHubBar/releases) and verify its adjacent SHA-256 file.
 2. Unzip it and move `GitHubBar.app` to `/Applications`.
 3. Ensure [GitHub CLI](https://cli.github.com/) is installed and connected to the accounts you want GitHubBar to inspect.
 4. Open GitHubBar. It appears in the menu bar and does not add a Dock icon.
@@ -26,9 +39,13 @@ scripts/check.sh
 GITHUBBAR_VERSION=0.1.0 scripts/package-validation.sh
 lipo -archs .build/validation/GitHubBar.app/Contents/MacOS/GitHubBar
 codesign --verify --deep --strict --verbose=2 .build/validation/GitHubBar.app
+plutil -extract CFBundleIdentifier raw .build/validation/GitHubBar.app/Contents/Info.plist
 ```
 
-Expected architecture output is `arm64 x86_64`. The packaging script also validates the plist, checks the ad-hoc signature, scans the executable for test credential markers, and emits an adjacent SHA-256 file.
+Expected architecture output contains `arm64` and `x86_64`; the bundle ID is
+`com.nikovert.githubbar`. The packaging script also validates the plist, checks the
+ad-hoc signature, scans the executable for test credential markers, and emits an
+adjacent SHA-256 file.
 
 Before publishing, manually verify on a supported macOS account:
 
@@ -43,4 +60,7 @@ Before publishing, manually verify on a supported macOS account:
 
 ## Publish a prerelease
 
-Push a tag matching `validation-v*` (for example `validation-v0.1.0-1`). The validation release workflow builds the artifact from that commit and creates a GitHub prerelease with the ZIP, checksum, and these notes. The workflow can also be started manually with a new validation tag.
+Push a tag matching `validation-v*` (for example `validation-v0.2.0-1`). The
+validation release workflow builds the artifact from that commit and creates a GitHub
+prerelease with the ZIP, checksum, and these notes. The workflow can also be started
+manually with a new validation tag.

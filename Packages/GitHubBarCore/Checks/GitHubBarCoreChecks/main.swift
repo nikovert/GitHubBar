@@ -42,6 +42,7 @@ enum GitHubBarCoreChecks {
         failures.append(contentsOf: await SnapshotStoreChecks.run())
         failures.append(contentsOf: await RepositoryScopeChecks.run())
         failures.append(contentsOf: await ReconciliationChecks.run())
+        failures.append(contentsOf: await LocalWorkspaceChecks.run())
 
         if failures.isEmpty {
             print("GitHubBarCore checks passed")

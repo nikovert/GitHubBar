@@ -7,7 +7,11 @@ cd "$repo_root"
 
 package_path="Packages/GitHubBarCore"
 sdk_path="$(xcrun --sdk macosx --show-sdk-path)"
-module_path="$package_path/.build/debug/Modules"
+bin_path="$(swift build --package-path "$package_path" --show-bin-path)"
+module_path="$bin_path"
+if [[ ! -e "$module_path/GitHubBarCore.swiftmodule" ]]; then
+  module_path="$bin_path/Modules"
+fi
 
 swift build --package-path "$package_path" --target GitHubBarCore
 swift run --package-path "$package_path" GitHubBarCoreChecks

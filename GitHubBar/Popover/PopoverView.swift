@@ -77,7 +77,6 @@ struct PopoverView: View {
         .frame(minHeight: 470, idealHeight: Self.fallbackHeight, maxHeight: Self.maximumHeight)
         .background(VisualEffectBackground())
         .environmentObject(avatarImageCache)
-        .environment(\.colorScheme, .dark)
     }
 
     private var header: some View {
@@ -269,9 +268,9 @@ private struct AccessCoverageBanner: View {
             Spacer(minLength: 0)
         }
         .padding(9)
-        .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 7))
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 7))
         .overlay {
-            RoundedRectangle(cornerRadius: 7).stroke(.white.opacity(0.12))
+            RoundedRectangle(cornerRadius: 7).stroke(Color.primary.opacity(0.12))
         }
         .padding(.top, 7)
         .accessibilityElement(children: .combine)

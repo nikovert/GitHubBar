@@ -94,7 +94,7 @@ private actor TestAccountCommandRunner: CommandRunning {
         if arguments.starts(with: ["auth", "status"]) {
             return CommandResult(
                 exitCode: 0,
-                standardOutput: #"{"hosts":{"github.com":[{"state":"#(accountState)","active":true,"host":"github.com","login":"FranciscoMoretti","tokenSource":"keyring","scopes":"#(scopes)","gitProtocol":"https"},{"state":"#(accountState)","active":false,"host":"github.com","login":"francisco-acme","tokenSource":"keyring","scopes":"#(scopes)","gitProtocol":"https"}]}}"#,
+                standardOutput: #"{"hosts":{"github.com":[{"state":"\#(accountState)","active":true,"host":"github.com","login":"FranciscoMoretti","tokenSource":"keyring","scopes":"\#(scopes)","gitProtocol":"https"},{"state":"\#(accountState)","active":false,"host":"github.com","login":"francisco-acme","tokenSource":"keyring","scopes":"\#(scopes)","gitProtocol":"https"}]}}"#,
                 standardError: ""
             )
         }

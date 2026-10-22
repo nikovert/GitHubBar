@@ -1,0 +1,27 @@
+name: Feature build
+
+on:
+  push:
+    branches:
+      - feat/agent-workspace
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install check tools
+        run: brew install xcodegen ripgrep
+      - name: Check core and app sources
+        run: scripts/check.sh
+      - name: Test core package
+        run: swift test --package-path Packages/GitHubBarCore --parallel
+      - name: Build and test macOS app
+        run: >-
+          xcodebuild test -project GitHubBar.xcodeproj
+          -scheme GitHubBar -configuration Debug
+          -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO

@@ -56,9 +56,13 @@ final class UpdateModel {
 enum UpdateControllerFactory {
     static func make() -> any UpdateControlling {
         #if GITHUBBAR_STABLE
-        SparkleUpdateController()
-        #else
-        DisabledUpdateController()
+        if let feed = Bundle.main.object(forInfoDictionaryKey: "SUFeedURL") as? String,
+           !feed.isEmpty,
+           let key = Bundle.main.object(forInfoDictionaryKey: "SUPublicEDKey") as? String,
+           !key.isEmpty {
+            return SparkleUpdateController()
+        }
         #endif
+        return DisabledUpdateController()
     }
 }

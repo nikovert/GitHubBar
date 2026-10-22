@@ -5,9 +5,8 @@ import XCTest
 final class SettingsStoreTests: XCTestCase {
     func testPinnedRepositoriesPersistInUserDefaults() async {
         let suiteName = "GitHubBarCoreTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-        let store = UserDefaultsSettingsStore(defaults: defaults)
+        defer { UserDefaults(suiteName: suiteName)?.removePersistentDomain(forName: suiteName) }
+        let store = UserDefaultsSettingsStore(defaults: UserDefaults(suiteName: suiteName)!)
         let expected = AppSettings(
             selectedLogin: "FranciscoMoretti",
             pinnedRepositories: [
@@ -18,6 +17,7 @@ final class SettingsStoreTests: XCTestCase {
 
         await store.save(expected)
 
-        XCTAssertEqual(await store.load(), expected)
+        let loaded = await store.load()
+        XCTAssertEqual(loaded, expected)
     }
 }

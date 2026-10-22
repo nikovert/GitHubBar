@@ -15,7 +15,8 @@ final class WorkloadEngineTests: XCTestCase {
         let stream = await engine.states()
         var iterator = stream.makeAsyncIterator()
 
-        let state = try XCTUnwrap(await iterator.next())
+        let nextState = await iterator.next()
+        let state = try XCTUnwrap(nextState)
 
         XCTAssertEqual(state, .empty)
         XCTAssertTrue(state.needsYourReview.isEmpty)
@@ -31,7 +32,8 @@ final class WorkloadEngineTests: XCTestCase {
         _ = await iterator.next()
 
         await engine.send(.selectRepositoryScope(.pinned))
-        let state = try XCTUnwrap(await iterator.next())
+        let nextState = await iterator.next()
+        let state = try XCTUnwrap(nextState)
 
         XCTAssertEqual(state.repositoryScope, .pinned)
     }
@@ -52,14 +54,16 @@ final class WorkloadEngineTests: XCTestCase {
         )
 
         await engine.send(.launch)
-        XCTAssertEqual(await workloadClient.requestCount, 1)
+        var requestCount = await workloadClient.requestCount
+        XCTAssertEqual(requestCount, 1)
 
         await engine.send(.selectRepositoryScope(.pinned))
         var state = try await currentState(of: engine)
         XCTAssertEqual(state.needsYourReview.map(\.repositoryID), ["REPO-A"])
         XCTAssertEqual(state.reviewCount, 1)
         XCTAssertFalse(state.isRefreshing)
-        XCTAssertEqual(await workloadClient.requestCount, 1)
+        requestCount = await workloadClient.requestCount
+        XCTAssertEqual(requestCount, 1)
 
         await engine.send(.togglePinnedRepository(
             RepositoryChoice(id: "REPO-A", nameWithOwner: "owner/a")
@@ -71,14 +75,16 @@ final class WorkloadEngineTests: XCTestCase {
         XCTAssertEqual(state.needsYourReview.map(\.repositoryID), ["REPO-B"])
         XCTAssertEqual(state.reviewCount, 1)
         XCTAssertFalse(state.isRefreshing)
-        XCTAssertEqual(await workloadClient.requestCount, 1)
+        requestCount = await workloadClient.requestCount
+        XCTAssertEqual(requestCount, 1)
 
         await engine.send(.selectRepositoryScope(.all))
         state = try await currentState(of: engine)
         XCTAssertEqual(state.needsYourReview.map(\.repositoryID), ["REPO-A", "REPO-B"])
         XCTAssertEqual(state.reviewCount, 2)
         XCTAssertFalse(state.isRefreshing)
-        XCTAssertEqual(await workloadClient.requestCount, 1)
+        requestCount = await workloadClient.requestCount
+        XCTAssertEqual(requestCount, 1)
     }
 
     func testConfirmingMonitoredAccountPersistsOnlyItsLogin() async throws {
@@ -93,26 +99,30 @@ final class WorkloadEngineTests: XCTestCase {
 
         await engine.send(.launch)
         _ = await iterator.next()
-        let selectionState = try XCTUnwrap(await iterator.next())
+        let nextSelectionState = await iterator.next()
+        let selectionState = try XCTUnwrap(nextSelectionState)
         guard case .selectionRequired = selectionState.accountConnection else {
             return XCTFail("Expected account selection")
         }
 
         await engine.send(.confirmAccount("FranciscoMoretti"))
         _ = await iterator.next()
-        let connectedState = try XCTUnwrap(await iterator.next())
+        let nextConnectedState = await iterator.next()
+        let connectedState = try XCTUnwrap(nextConnectedState)
         guard case let .connected(login, _) = connectedState.accountConnection else {
             return XCTFail("Expected connected account")
         }
 
         XCTAssertEqual(login, "FranciscoMoretti")
-        XCTAssertEqual(await settingsStore.load().selectedLogin, "FranciscoMoretti")
+        let settings = await settingsStore.load()
+        XCTAssertEqual(settings.selectedLogin, "FranciscoMoretti")
     }
 
     private func currentState(of engine: WorkloadEngine) async throws -> AppPresentationState {
         let stream = await engine.states()
         var iterator = stream.makeAsyncIterator()
-        return try XCTUnwrap(await iterator.next())
+        let nextState = await iterator.next()
+        return try XCTUnwrap(nextState)
     }
 }
 

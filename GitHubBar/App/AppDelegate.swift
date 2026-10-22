@@ -7,11 +7,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var appModel: AppModel?
     private var statusItemController: StatusItemController?
     private var settingsWindowController: SettingsWindowController?
+    private var workspaceWindowController: WorkspaceWindowController?
+    private var workspaceModel: WorkspaceModel?
     private var applicationMenuController: ApplicationMenuController?
     private var globalHotKeyController: GlobalHotKeyController?
     private var visualValidationWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        AppearanceController.applySavedPreference()
         let workloadClient: any GitHubWorkloadClient = ProcessInfo.processInfo.environment["GITHUBBAR_FAILURE_DEMO"] == "1"
             ? UnavailableGitHubWorkloadClient()
             : GraphQLGitHubWorkloadClient()
@@ -27,17 +30,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             launchAtLoginController: MacLaunchAtLoginController()
         )
         let model = AppModel(engine: engine)
+        let workspaceStore = LocalWorkspaceStore()
+        let workspaceModel = WorkspaceModel(
+            store: workspaceStore,
+            sessions: AgentSessionManager(store: workspaceStore)
+        )
+        let workspaceWindowController = WorkspaceWindowController(
+            appModel: model, workspaceModel: workspaceModel
+        )
         let settingsWindowController = SettingsWindowController(
             appModel: model,
             updateController: UpdateControllerFactory.make()
         )
         let actions = AppActions(
             openSettings: { [weak settingsWindowController] in settingsWindowController?.show() },
-            openAbout: { [weak settingsWindowController] in settingsWindowController?.showAbout() }
+            openAbout: { [weak settingsWindowController] in settingsWindowController?.showAbout() },
+            openWorkspace: { [weak workspaceWindowController] subject in
+                workspaceWindowController?.show(subject: subject)
+            }
         )
         let statusItemController = StatusItemController(
             appModel: model,
             actions: actions,
+            workspaceModel: workspaceModel,
             avatarImageCache: AvatarImageCache()
         )
         let applicationMenuController = ApplicationMenuController(appModel: model, actions: actions)
@@ -46,6 +61,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         appModel = model
         self.statusItemController = statusItemController
         self.settingsWindowController = settingsWindowController
+        self.workspaceWindowController = workspaceWindowController
+        self.workspaceModel = workspaceModel
         self.applicationMenuController = applicationMenuController
 
         let shortcut = GitHubBarShortcut.openMenu
@@ -60,6 +77,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         model.start()
+        workspaceModel.onDocumentChange = { [weak statusItemController] in
+            statusItemController?.rebuildStatusMenu()
+        }
+        workspaceModel.start()
         model.send(.launch)
 
         if ProcessInfo.processInfo.environment["GITHUBBAR_OPEN_MENU"] == "1" {
@@ -82,6 +103,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         appModel?.stop()
+        workspaceModel?.stop()
     }
 
     private func showVisualValidationWindow(statusItemController: StatusItemController) {
