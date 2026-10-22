@@ -56,11 +56,24 @@
 - [x] Add failing presentation tests for sections, scope defaults, and stale-account hiding.
 - [x] Implement native reusable Search window and Cmd-F/menu entry, synchronize workload changes without replacing existing callbacks.
 - [x] Embed reviewer Settings and connect shared lifecycle.
-- [ ] Run all core/app tests and build universal validation archive.
+- [x] Run all core/app tests and build universal validation archive.
 
 ## Task 4: Verification and handoff
 
 - [x] Independently review the complete change for privacy, policy and lifecycle regressions.
 - [x] Fix significant findings with regression tests; rerun the complete Swift suites.
-- [ ] Verify provider-neutral tracked tree, update user docs, commit and package the feature branch.
-- [ ] Report capabilities, any remaining limitations and artifact path; do not imply publication.
+- [x] Verify provider-neutral tracked tree, update user docs, commit and package the feature branch.
+- [x] Record capabilities, remaining limitations and artifact path without implying publication.
+
+## Verification record
+
+Implementation commit: `921cebf66b04`. Core suite: 83 passed; native app suite:
+30 passed. `scripts/check.sh` passed. Both light/dark renders were inspected.
+Independent review's two Important findings were fixed with regression tests.
+No provider-specific bot references remain in the tracked tree.
+
+Artifact: `dist/GitHubBar-validation-0.4.0-921cebf66b04.zip` (arm64 and x86_64,
+including the bundled CLI). SHA-256:
+`8d6dcd5feede126f9bc2a87bd9a4ddde106c08e778587b641ce0d318c066a503`.
+Ad-hoc signed, not notarized. Not merged, pushed, published or installed.
+Limitations are recorded in `docs/releases/search-and-reviewers-validation.md`.
