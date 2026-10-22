@@ -24,6 +24,7 @@
 - Follow macOS appearance or choose Light or Dark in Settings.
 - Keep local priority, status tags, and agent notes for each PR or stack. PRs inherit stack
   values until overridden. The board is stored only on this Mac.
+- Scan PR titles, authors, requested reviewers, review status, and stack members in the board.
 - Create a new Codex or Claude worktree/tmux session, or pin an existing one.
 - Select a PR with a running pinned agent from the menu to jump into its tmux session.
   Right-click a PR to edit its board entry, or open **Workspace Board…** from the menu.

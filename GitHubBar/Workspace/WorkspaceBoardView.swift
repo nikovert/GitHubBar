@@ -6,8 +6,11 @@ struct WorkspaceBoardView: View {
     @Bindable var workspace: WorkspaceModel
     @Bindable var appModel: AppModel
 
+    private var pullRequests: [PullRequestPresentation] {
+        appModel.state.needsYourReview + appModel.state.authoredPullRequests
+    }
+
     private var subjects: [BoardSubject] {
-        let pullRequests = appModel.state.needsYourReview + appModel.state.authoredPullRequests
         var result = appModel.state.pullRequestStacks.compactMap { stack in
             stack.root.flatMap { try? PullRequestKey(url: $0.url) }.map(BoardSubject.stack)
         }
@@ -24,7 +27,7 @@ struct WorkspaceBoardView: View {
                     subjectRow(subject).tag(subject)
                 }
             }
-            .frame(minWidth: 260, idealWidth: 310)
+            .frame(minWidth: 290, idealWidth: 350)
 
             Divider()
 
@@ -32,7 +35,8 @@ struct WorkspaceBoardView: View {
                 WorkspaceDetailView(
                     workspace: workspace,
                     subject: subject,
-                    stackRoot: stackRoot(for: subject)
+                    stackRoot: stackRoot(for: subject),
+                    details: details(for: subject)
                 )
                 .id(subject)
             } else {
@@ -44,7 +48,7 @@ struct WorkspaceBoardView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .frame(minWidth: 780, minHeight: 590)
+        .frame(minWidth: 840, minHeight: 590)
         .onAppear {
             if workspace.selectedSubject == nil { workspace.selectedSubject = subjects.first }
         }
@@ -66,13 +70,19 @@ struct WorkspaceBoardView: View {
         let resolved = workspace.document.resolvedEntry(
             for: subject, stackRoot: stackRoot(for: subject)
         )
+        let details = details(for: subject)
         return HStack(spacing: 6) {
             Image(systemName: subject.isStack ? "square.stack.3d.up" : "arrow.triangle.pull")
                 .foregroundStyle(.secondary)
             VStack(alignment: .leading, spacing: 2) {
-                Text(subject.key.description).lineLimit(1)
-                Text(subject.isStack ? "Stack" : "Pull request")
-                    .font(.caption2).foregroundStyle(.secondary)
+                Text(details?.primary.title ?? subject.key.description)
+                    .font(.subheadline.weight(.medium)).lineLimit(2)
+                Text("\(subject.key.description) · by \(details?.primary.author?.displayName ?? "unknown")")
+                    .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                if let details {
+                    Text("\(subject.isStack ? "Stack · \(details.members.count) PRs · " : "")Requested: \(requestedReviewerSummary(for: details.primary))")
+                        .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                }
             }
             Spacer()
             if resolved.priority != .none {
@@ -83,6 +93,14 @@ struct WorkspaceBoardView: View {
                 Image(systemName: "terminal").foregroundStyle(.secondary)
             }
         }
+        .help(details?.primary.title ?? subject.key.description)
+    }
+
+    private func details(for subject: BoardSubject) -> BoardSubjectDetails? {
+        BoardSubjectDetails.resolve(
+            subject: subject, pullRequests: pullRequests,
+            stacks: appModel.state.pullRequestStacks
+        )
     }
 
     private func stackRoot(for subject: BoardSubject) -> PullRequestKey? {
@@ -97,6 +115,7 @@ private struct WorkspaceDetailView: View {
     @Bindable var workspace: WorkspaceModel
     let subject: BoardSubject
     let stackRoot: PullRequestKey?
+    let details: BoardSubjectDetails?
 
     @State private var noteDraft = ""
     @State private var checkoutPath = ""
@@ -123,12 +142,44 @@ private struct WorkspaceDetailView: View {
             VStack(alignment: .leading, spacing: 20) {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(subject.key.description).font(.title2.bold())
-                        Text(subject.isStack ? "Local stack board" : "Local pull-request board")
+                        Text(details?.primary.title ?? subject.key.description)
+                            .font(.title2.bold())
+                        Text("\(subject.key.description) · \(subject.isStack ? "Stack" : "Pull request")")
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
                     Link("Open on GitHub ↗", destination: subject.key.url)
+                }
+
+                if let details {
+                    GroupBox(subject.isStack ? "Stack root on GitHub" : "Pull request on GitHub") {
+                        VStack(alignment: .leading, spacing: 7) {
+                            Text("Author: \(details.primary.author?.displayName ?? "Unavailable")")
+                            Text("Requested reviewers: \(requestedReviewerSummary(for: details.primary))")
+                            Text("Review status: \(reviewStatusSummary(for: details.primary))")
+                            Text("Last GitHub update: \(details.primary.updatedAt, style: .relative)")
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(5)
+                    }
+                    if subject.isStack {
+                        GroupBox("Pull requests in stack") {
+                            VStack(alignment: .leading, spacing: 10) {
+                                ForEach(details.members) { member in
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Link("#\(member.number) \(member.title)", destination: member.url)
+                                        Text("By \(member.author?.displayName ?? "unknown") · Requested: \(requestedReviewerSummary(for: member))")
+                                            .font(.caption).foregroundStyle(.secondary)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                            }
+                            .padding(5)
+                        }
+                    }
+                } else {
+                    Text("GitHub PR details are unavailable until the next refresh.")
+                        .foregroundStyle(.secondary)
                 }
 
                 GroupBox("Priority and status") {
@@ -376,6 +427,22 @@ private extension BoardSubject {
     var isStack: Bool {
         if case .stack = self { return true }
         return false
+    }
+}
+
+private func requestedReviewerSummary(for pullRequest: PullRequestPresentation) -> String {
+    guard let requested = pullRequest.requestedReviewers else { return "Unavailable" }
+    guard !requested.isEmpty else { return "None" }
+    return requested.map(\.displayName).joined(separator: ", ")
+}
+
+private func reviewStatusSummary(for pullRequest: PullRequestPresentation) -> String {
+    if pullRequest.isDraft { return "Draft" }
+    switch pullRequest.reviewDecision {
+    case .approved: return "Approved"
+    case .changesRequested: return "Changes requested"
+    case .reviewRequired: return "Review required"
+    case nil: return "Unavailable"
     }
 }
 

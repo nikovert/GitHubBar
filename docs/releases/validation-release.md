@@ -9,6 +9,7 @@ not part of GitHubBar's future trusted Developer ID/Sparkle update channel.
 
 - Follow system appearance or choose Light or Dark in Settings.
 - Keep local priorities, status tags, and notes for PRs and stacks.
+- See PR titles, authors, requested reviewers, review status, and stack members on the board.
 - Pin or create Codex/Claude worktree sessions and jump to them from the menu.
 
 Agent sessions use local tmux and Apple Terminal. They do not automatically review,
