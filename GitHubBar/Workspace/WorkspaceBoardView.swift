@@ -5,6 +5,7 @@ import SwiftUI
 struct WorkspaceBoardView: View {
     @Bindable var workspace: WorkspaceModel
     @Bindable var appModel: AppModel
+    @State private var showsCleanup = false
 
     private var pullRequests: [PullRequestPresentation] {
         appModel.state.needsYourReview + appModel.state.authoredPullRequests
@@ -59,6 +60,32 @@ struct WorkspaceBoardView: View {
             }
         }
         .frame(minWidth: 840, minHeight: 590)
+        .safeAreaInset(edge: .top, spacing: 0) {
+            HStack {
+                Button("Refresh", systemImage: "arrow.clockwise") {
+                    appModel.send(.manualRefresh)
+                    Task { await workspace.reload() }
+                }
+                .help("Refresh pull requests and local workspace status")
+                if appModel.state.isRefreshing {
+                    ProgressView().controlSize(.small)
+                    Text("Refreshing…").foregroundStyle(.secondary)
+                } else if let updated = appModel.state.lastUpdatedAt {
+                    Text("Updated \(updated.formatted(date: .omitted, time: .standard))")
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button("Clean up merged worktrees…", systemImage: "trash") {
+                    showsCleanup = true
+                    workspace.cleanup.scan()
+                }
+                .disabled(workspace.monitoredAccountLogin == nil)
+            }
+            .padding(12)
+            .background(Color(nsColor: .windowBackgroundColor))
+            .overlay(alignment: .bottom) { Divider() }
+        }
+        .sheet(isPresented: $showsCleanup) { WorktreeCleanupView(model: workspace.cleanup) }
         .onAppear {
             if workspace.selectedSubject == nil { workspace.selectedSubject = subjects.first }
         }

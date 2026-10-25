@@ -25,6 +25,7 @@ private enum WorkspaceAction: Hashable {
 @MainActor
 @Observable
 final class WorkspaceModel {
+    let cleanup: WorktreeCleanupModel
     private(set) var document: LocalWorkspaceDocument = .empty
     private(set) var reviewDocument = AgentReviewDocument()
     private(set) var monitoredAccountLogin: String?
@@ -49,6 +50,8 @@ final class WorkspaceModel {
         self.store = store
         self.sessions = sessions
         self.reviewStore = reviewStore
+        cleanup = WorktreeCleanupModel(service: WorktreeCleanupCoordinator(store: store, sessions: sessions))
+        cleanup.onCompletion = { [weak self] in await self?.reload() }
     }
 
     func start() {
@@ -70,6 +73,7 @@ final class WorkspaceModel {
     func reload() async {
         do {
             let loaded = try await store.load()
+            cleanup.updateConfiguration(loaded.configuration)
             if loaded != document {
                 document = loaded
                 onDocumentChange?()
@@ -106,6 +110,7 @@ final class WorkspaceModel {
             monitoredAccountLogin = nil
         }
         reviewContexts = WorkspaceReviewContext.contexts(in: state)
+        cleanup.updateAccount(monitoredAccountLogin)
         syncReviewContexts()
     }
 

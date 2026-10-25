@@ -86,6 +86,45 @@ then explicitly Save and Start it, or choose external worker mode. A raw coding 
 needs a compatible adapter; GitHubBar does not bundle a review worker.
 For custom clients, see the [agent review protocol](agent-review-protocol.md).
 
+## Refresh and merged-worktree cleanup
+
+The Workspace Board has **Refresh** and **Clean up merged worktrees…** controls.
+Manual refresh during an existing reconciliation queues one follow-up refresh;
+repeated clicks coalesce. A disconnected account is rechecked. An explicit GitHub
+rate-limit reset remains respected rather than bypassed by the button.
+
+Cleanup scans saved session links, including PRs no longer in the open workload.
+Scanning does not stop sessions or remove worktrees. Choose either:
+
+- **Stop and close all eligible worktrees** to explicitly approve the listed eligible
+  worktrees and their managed sessions.
+- **Review individually** to see PR titles, numbers, repositories, local paths, session
+  names/activity, and skip reasons. Nothing is preselected; choose rows and press
+  **Stop and close selected**.
+
+Only GitHubBar-created linked worktrees under the configured root are eligible.
+The PR must be verified merged, and local HEAD must exactly match the PR head freshly
+fetched from origin and reported by GitHub. This also works after squash merges or
+source-branch deletion. Stack worktrees require all members verified merged; missing,
+incomplete, or over-100-member stack metadata blocks cleanup.
+
+Modified, staged, untracked, ignored, sparse/hidden, locked, external, or unverifiable
+worktrees are skipped. GitHubBar checks again before stopping sessions and before
+removal. Changed configuration, HEAD, or session identity invalidates approval.
+Unlinked tmux sessions prevent cleanup. Remaining same-user processes with a working
+directory inside the worktree also prevent removal; close them and scan again.
+
+Sessions are stopped by exact tmux session ID, not terminal-app-wide commands.
+Detached or independently started agents are not forcibly killed. Cleanup never uses
+force removal and never deletes local branches. Successful removal clears the local
+session links while retaining board notes, tags, priorities, and review history.
+Failures retain worktrees/links for inspection; the result list reports each outcome.
+Cancellation stops further operations, but completed removals cannot be undone.
+
+Keep other tools from editing a worktree during cleanup: Git does not provide an
+atomic transaction across filesystem checks and removal. Session and process checks
+reduce this race but cannot lock out an independently launched editor or agent.
+
 ## Boundaries
 
 A pinned Codex or Claude session stays local until you explicitly ask it to review or
