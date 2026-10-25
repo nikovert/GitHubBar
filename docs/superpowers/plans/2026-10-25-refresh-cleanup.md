@@ -109,6 +109,6 @@ state and delegates to the coordinator. No Git commands or safety policy in view
   Use `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` for Swift/Xcode.
 - [x] Obtain an independent safety review, resolve findings with regression tests,
   and repeat affected verification before committing.
-- [ ] Package a universal validation ZIP using `scripts/package-validation.sh`;
+- [x] Package a universal validation ZIP using `scripts/package-validation.sh`;
   verify signatures, architectures, checksum, and document installation instructions.
   Do not merge, publish, install, or clean live worktrees without separate approval.
