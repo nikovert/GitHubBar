@@ -2,6 +2,56 @@ import XCTest
 @testable import GitHubBarCore
 
 final class WorkloadEngineTests: XCTestCase {
+    func testManualClicksDuringRefreshCoalesceAndPublishFollowup() async throws {
+        let client = SuspendedRefreshClient()
+        let engine = WorkloadEngine(accountConnection: ConnectedTestAccountConnection(), workloadClient: client)
+        let launch = Task { await engine.send(.launch) }
+        await client.waitForStart()
+        await engine.send(.manualRefresh)
+        await engine.send(.manualRefresh)
+        await engine.send(.manualRefresh)
+        await engine.send(.setWorkloadSurfaceOpen(false))
+        await client.release()
+        await launch.value
+        let count = await client.requestCount
+        let state = try await currentState(of: engine)
+        XCTAssertEqual(count, 2)
+        XCTAssertEqual(state.lastUpdatedAt, Date(timeIntervalSince1970: 2))
+        XCTAssertFalse(state.isRefreshing)
+    }
+
+    func testManualRefreshRecoversUnavailableConnection() async throws {
+        let connection = RecoveringConnection()
+        let client = ScopeFilteringWorkloadClient()
+        let engine = WorkloadEngine(accountConnection: connection, workloadClient: client,
+            settingsStore: InMemorySettingsStore(settings: AppSettings(selectedLogin: "chosen")))
+        await engine.send(.launch)
+        await engine.send(.manualRefresh)
+        let state = try await currentState(of: engine)
+        guard case let .connected(login, _) = state.accountConnection else {
+            return XCTFail("Manual refresh should retry account resolution")
+        }
+        XCTAssertEqual(login, "chosen")
+        XCTAssertEqual(state.reviewCount, 2)
+    }
+
+    func testAccountSwitchDiscardsOldRefreshAndUsesNewIdentity() async throws {
+        let client = SuspendedRefreshClient()
+        let engine = WorkloadEngine(accountConnection: ConnectedTestAccountConnection(), workloadClient: client)
+        let launch = Task { await engine.send(.launch) }
+        await client.waitForStart()
+        await engine.send(.manualRefresh)
+        await engine.send(.confirmAccount("new-account"))
+        await client.release()
+        await launch.value
+        let state = try await currentState(of: engine)
+        guard case let .connected(login, _) = state.accountConnection else { return XCTFail() }
+        XCTAssertEqual(login, "new-account")
+        XCTAssertEqual(state.lastUpdatedAt, Date(timeIntervalSince1970: 2))
+        let logins = await client.logins
+        XCTAssertEqual(logins, ["FranciscoMoretti", "new-account"])
+    }
+
     func testReviewCountDisplayShowsTwoDigitsAndCapsThreeDigitVisualText() {
         XCTAssertNil(ReviewCountDisplay.text(for: 0))
         XCTAssertEqual(ReviewCountDisplay.text(for: 4), "4")
@@ -123,6 +173,34 @@ final class WorkloadEngineTests: XCTestCase {
         var iterator = stream.makeAsyncIterator()
         let nextState = await iterator.next()
         return try XCTUnwrap(nextState)
+    }
+}
+
+private actor RecoveringConnection: AccountConnection {
+    private var attempts = 0
+    func inspect(selectedLogin: String?) async -> AccountConnectionResult {
+        attempts += 1
+        if attempts == 1 { return .connectionRequired }
+        return await ConnectedTestAccountConnection().inspect(selectedLogin: selectedLogin)
+    }
+}
+
+private actor SuspendedRefreshClient: GitHubWorkloadClient {
+    private(set) var requestCount = 0
+    private(set) var logins: [String] = []
+    private var gate: CheckedContinuation<Void, Never>?
+    func waitForStart() async {
+        while gate == nil { await Task.yield() }
+    }
+    func release() { gate?.resume(); gate = nil }
+    func reconcile(account: ResolvedAccount) async -> WorkloadReconciliationResult {
+        requestCount += 1
+        let number = requestCount
+        logins.append(account.login)
+        if number == 1 { await withCheckedContinuation { gate = $0 } }
+        return .complete(WorkloadSnapshot(hostname: account.hostname, accountLogin: account.login,
+            capturedAt: Date(timeIntervalSince1970: Double(number)), completeness: .complete,
+            availableRepositories: [], needsYourReview: [], authoredPullRequests: []), .empty)
     }
 }
 

@@ -152,6 +152,12 @@ public actor WorkloadEngine {
             }
             publish()
         case .manualRefresh:
+            if resolvedAccount == nil {
+                let settings = await currentSettings()
+                await inspectAccount(selectedLogin: settings.selectedLogin, trigger: .manual)
+                await restartRefreshTimer()
+                return
+            }
             rateLimitRetryTask?.cancel()
             rateLimitRetryTask = nil
             rateLimitAttempt = 0
@@ -206,7 +212,7 @@ public actor WorkloadEngine {
     private func requestReconciliation(trigger: ReconciliationTrigger) async {
         guard resolvedAccount != nil else { return }
         if isReconciling {
-            if activeReconciliationGeneration != generation {
+            if trigger == .manual || activeReconciliationGeneration != generation {
                 queuedTrigger = trigger
             }
             return
