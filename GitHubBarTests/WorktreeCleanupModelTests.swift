@@ -130,6 +130,8 @@ actor CleanupUIService: WorktreeCleanupServicing {
         return WorktreeCleanupCandidate(path: "/worktrees/" + suffix, sessions: [link],
             title: "Improve measurement stability and preserve fallback behavior when inputs arrive late",
             headSHA: String(repeating: "a", count: 40), skipReason: reason,
-            liveSessions: ["githubbar-codex-example": "$1"], accountLogin: "tester", configuration: WorkspaceConfiguration())
+            liveSessions: ["githubbar-codex-example": WorktreeCleanupSessionIdentity(id: "$1",
+                serverPID: 123, serverStartedAt: 1_700_000_000, sessionCreatedAt: 1_700_000_001)],
+            accountLogin: "tester", configuration: WorkspaceConfiguration())
     }
 }

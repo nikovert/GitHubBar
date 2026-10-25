@@ -4,12 +4,21 @@ public struct WorktreeCleanupPR: Equatable, Sendable {
     public var title: String
     public var headSHA: String
     public var merged: Bool
+    public var hasStack: Bool
     public var stackComplete: Bool
     public var stackMerged: Bool
-    public init(title: String, headSHA: String, merged: Bool, stackComplete: Bool = true, stackMerged: Bool = true) {
+    public init(title: String, headSHA: String, merged: Bool, hasStack: Bool = false, stackComplete: Bool = true, stackMerged: Bool = true) {
         self.title = title; self.headSHA = headSHA; self.merged = merged
+        self.hasStack = hasStack
         self.stackComplete = stackComplete; self.stackMerged = stackMerged
     }
+}
+
+public struct WorktreeCleanupSessionIdentity: Equatable, Sendable {
+    public let id: String
+    public let serverPID: Int
+    public let serverStartedAt: Int
+    public let sessionCreatedAt: Int
 }
 
 public protocol WorktreeCleanupGitHubChecking: Sendable {
@@ -23,7 +32,7 @@ public struct WorktreeCleanupCandidate: Identifiable, Equatable, Sendable {
     public let title: String
     public let headSHA: String
     public let skipReason: String?
-    public let liveSessions: [String: String]
+    public let liveSessions: [String: WorktreeCleanupSessionIdentity]
     public let accountLogin: String
     public let configuration: WorkspaceConfiguration
     public var isEligible: Bool { skipReason == nil }
@@ -90,7 +99,7 @@ public actor WorktreeCleanupCoordinator: WorktreeCleanupServicing {
             .sorted { $0.id.uuidString < $1.id.uuidString }
         var title = links.first?.subject.key.description ?? path
         var sha = ""
-        var live: [String: String] = [:]
+        var live: [String: WorktreeCleanupSessionIdentity] = [:]
         var reason: String?
         do {
             guard !accountLogin.isEmpty else { throw CleanupBlocked("Connect a monitored account first.") }
@@ -99,7 +108,9 @@ public actor WorktreeCleanupCoordinator: WorktreeCleanupServicing {
                 let pr = try await github.check(subject, accountLogin: accountLogin)
                 title = pr.title
                 guard pr.merged else { throw CleanupBlocked("The PR is not merged.") }
-                if case .stack = subject {
+                let wasStack: Bool
+                if case .stack = subject { wasStack = true } else { wasStack = false }
+                if pr.hasStack || wasStack {
                     guard pr.stackComplete, pr.stackMerged else { throw CleanupBlocked("The complete stack must be verified merged.") }
                 }
                 try await local.verifyOriginHead(path: path, subject: subject, sha: pr.headSHA)
@@ -132,12 +143,14 @@ public actor WorktreeCleanupCoordinator: WorktreeCleanupServicing {
             try await local.requireHead(candidate.headSHA, path: candidate.path)
             try Task.checkCancellation()
             started = true
-            for (name, id) in candidate.liveSessions.sorted(by: { $0.key < $1.key }) {
+            var remaining = candidate.liveSessions
+            for (name, identity) in candidate.liveSessions.sorted(by: { $0.key < $1.key }) {
                 try Task.checkCancellation()
                 try unchanged(candidate, document: await store.load())
                 let current = try await local.liveSessions(path: candidate.path, links: candidate.sessions)
-                guard current[name] == id else { throw CleanupBlocked("Session identity changed; cleanup stopped.") }
-                try await local.stop(sessionID: id)
+                guard current == remaining else { throw CleanupBlocked("Session activity changed; cleanup stopped. Scan again.") }
+                try await local.stop(sessionID: identity.id)
+                remaining.removeValue(forKey: name)
             }
             try Task.checkCancellation()
             try unchanged(candidate, document: await store.load())

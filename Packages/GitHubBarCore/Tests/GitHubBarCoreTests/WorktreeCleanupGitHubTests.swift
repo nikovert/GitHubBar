@@ -9,10 +9,17 @@ final class WorktreeCleanupGitHubTests: XCTestCase {
     }
 
     func testMergedRootWithOpenMemberIsNotMergedStack() async throws {
-        let result = try await makeClient(states: ["MERGED", "OPEN"]).check(.stack(key), accountLogin: "tester")
+        let result = try await makeClient(states: ["MERGED", "OPEN"]).check(.pullRequest(key), accountLogin: "tester")
         XCTAssertTrue(result.merged)
+        XCTAssertTrue(result.hasStack)
         XCTAssertTrue(result.stackComplete)
         XCTAssertFalse(result.stackMerged)
+    }
+
+    func testNullStackIsDistinguishedFromIncompleteStack() async throws {
+        let result = try await makeClient(extra: "no-stack").check(.pullRequest(key), accountLogin: "tester")
+        XCTAssertFalse(result.hasStack)
+        XCTAssertTrue(result.merged)
     }
 
     func testTruncatedStackAndNullMembersAreIncomplete() async throws {
@@ -41,8 +48,9 @@ final class WorktreeCleanupGitHubTests: XCTestCase {
             ["pullRequest": ["url": "https://github.com/acme/widget/pull/\(number)", "state": state]]
         }
         if extra == "null" { nodes[1] = NSNull() }
-        let pr: [String: Any] = ["title": "Finished change", "state": "MERGED", "headRefOid": String(repeating: "a", count: 40),
+        var pr: [String: Any] = ["title": "Finished change", "state": "MERGED", "headRefOid": String(repeating: "a", count: 40),
             "stack": ["size": extra == "size" ? 3 : 2, "entries": ["nodes": nodes, "pageInfo": ["hasNextPage": extra == "truncated"]]]]
+        if extra == "no-stack" { pr["stack"] = NSNull() }
         var json: [String: Any] = ["data": ["viewer": ["login": extra == "viewer" ? "wrong" : "tester"],
             "repository": ["pullRequest": extra == "missing" ? NSNull() as Any : pr as Any]]]
         if extra == "error" { json["errors"] = [["message": "Incomplete"]] }

@@ -24,6 +24,8 @@ public actor WorkloadEngine {
     private var workloadSurfaceRefreshTask: Task<Void, Never>?
     private var rateLimitRetryTask: Task<Void, Never>?
     private var rateLimitAttempt = 0
+    private var rateLimitResetAt: Date?
+    private var deferredManualRefresh = false
     private var isWorkloadSurfaceOpen = false
     private var lastWorkloadSurfaceOpenAt: Date?
 
@@ -152,8 +154,7 @@ public actor WorkloadEngine {
             }
             publish()
         case .manualRefresh:
-            if case let .rateLimited(until) = state.refreshHealth,
-               let until, until > (await clock.now()) { return }
+            if await deferManualRefreshIfRateLimited() { return }
             if resolvedAccount == nil {
                 let settings = await currentSettings()
                 await inspectAccount(selectedLogin: settings.selectedLogin, trigger: .manual)
@@ -237,8 +238,7 @@ public actor WorkloadEngine {
     }
 
     private func performReconciliation(trigger: ReconciliationTrigger) async {
-        if trigger == .manual, case let .rateLimited(until) = state.refreshHealth,
-           let until, until > (await clock.now()) { return }
+        if trigger == .manual, await deferManualRefreshIfRateLimited() { return }
         guard let account = resolvedAccount else { return }
         let reconciliationGeneration = generation
         let previousSnapshot = currentSnapshot
@@ -256,6 +256,8 @@ public actor WorkloadEngine {
             rateLimitRetryTask?.cancel()
             rateLimitRetryTask = nil
             rateLimitAttempt = 0
+            rateLimitResetAt = nil
+            deferredManualRefresh = false
             apply(snapshot)
             await enrichPinnedRepositories(using: snapshot.availableRepositories)
             state.refreshHealth = .fresh
@@ -276,11 +278,13 @@ public actor WorkloadEngine {
             apply(merged)
             await enrichPinnedRepositories(using: merged.availableRepositories)
             if metadata.rateLimitEncountered {
+                rateLimitResetAt = metadata.resetAt
                 rateLimitAttempt += 1
                 scheduleRateLimitRetry(after: metadata, generation: reconciliationGeneration)
                 state.refreshHealth = .partial(message: "GitHub rate limiting left some pull-request data unchanged.")
             } else {
                 rateLimitAttempt = 0
+                rateLimitResetAt = nil
                 state.refreshHealth = .partial(
                     message: metadata.warnings.first ?? "Some pull-request data could not be refreshed."
                 )
@@ -296,11 +300,13 @@ public actor WorkloadEngine {
             )
         case let .failed(failure, metadata):
             if failure == .rateLimited {
+                rateLimitResetAt = metadata.resetAt
                 state.refreshHealth = .rateLimited(until: metadata.resetAt)
                 rateLimitAttempt += 1
                 scheduleRateLimitRetry(after: metadata, generation: reconciliationGeneration)
             } else if failure == .organizationAuthorizationRequired {
                 rateLimitAttempt = 0
+                rateLimitResetAt = nil
                 state.accountConnection = .connected(
                     login: account.login,
                     accessCoverage: AccessCoverage(
@@ -313,6 +319,7 @@ public actor WorkloadEngine {
                 )
             } else {
                 rateLimitAttempt = 0
+                rateLimitResetAt = nil
                 state.refreshHealth = .failed(message: "GitHub could not refresh the active workload.")
             }
             diagnostic = ReconciliationDiagnostic(
@@ -426,11 +433,21 @@ public actor WorkloadEngine {
         scheduleRefreshTimer(at: candidate)
     }
 
+    private func deferManualRefreshIfRateLimited() async -> Bool {
+        guard let deadline = rateLimitResetAt, deadline > (await clock.now()) else { return false }
+        deferredManualRefresh = true
+        if rateLimitRetryTask == nil {
+            scheduleRateLimitRetry(after: ReconciliationMetadata(queryCost: 0, remainingPoints: 0,
+                resetAt: deadline, warnings: [], rateLimitEncountered: true), generation: generation)
+        }
+        return true
+    }
+
     private func scheduleRateLimitRetry(
         after metadata: ReconciliationMetadata,
         generation expectedGeneration: Int
     ) {
-        guard rateLimitAttempt < Self.maximumRateLimitAttempts else { return }
+        guard deferredManualRefresh || rateLimitAttempt < Self.maximumRateLimitAttempts else { return }
 
         rateLimitRetryTask?.cancel()
         let clock = self.clock
@@ -439,7 +456,7 @@ public actor WorkloadEngine {
             let now = await clock.now()
             let resetDelay = metadata.resetAt.map { max(0, $0.timeIntervalSince(now)) } ?? 0
             let exponentialDelay = pow(2.0, Double(attempt))
-            let boundedDelay = min(30 * 60, max(exponentialDelay, resetDelay))
+            let boundedDelay = max(resetDelay, min(30 * 60, exponentialDelay))
             do {
                 try await clock.sleep(for: .seconds(boundedDelay))
             } catch {
@@ -453,7 +470,9 @@ public actor WorkloadEngine {
     private func rateLimitRetryFired(expectedGeneration: Int) async {
         rateLimitRetryTask = nil
         guard generation == expectedGeneration else { return }
-        await requestReconciliation(trigger: .rateLimitRetry)
+        let trigger: ReconciliationTrigger = deferredManualRefresh ? .manual : .rateLimitRetry
+        deferredManualRefresh = false
+        await requestReconciliation(trigger: trigger)
     }
 
     private func apply(_ snapshot: WorkloadSnapshot) {
@@ -525,6 +544,8 @@ public actor WorkloadEngine {
         rateLimitRetryTask?.cancel()
         rateLimitRetryTask = nil
         rateLimitAttempt = 0
+        rateLimitResetAt = nil
+        deferredManualRefresh = false
         if clearPresentation {
             clearAccountDerivedPresentation()
         }

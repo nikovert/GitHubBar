@@ -39,15 +39,15 @@ resolution, workspace persistence, and agent lifecycle code.
 
 **Interfaces:** Preserve `WorkloadEngine.send(_:)` and existing presentation state.
 
-- [ ] Add suspended-client regression tests: manual refresh during an active request
+- [x] Add suspended-client regression tests: manual refresh during an active request
   produces exactly one subsequent request, repeated clicks coalesce, automatic
   triggers do not erase it, and final published data comes from the second request.
-- [ ] Add disconnected-account and account-switch tests; assert selected identity
+- [x] Add disconnected-account and account-switch tests; assert selected identity
   is respected and the old account cannot publish after invalidation.
-- [ ] Run the focused suite and record the intended failure before implementation.
-- [ ] Update manual-trigger scheduling and connection recovery, keeping automatic
+- [x] Run the focused suite and record the intended failure before implementation.
+- [x] Update manual-trigger scheduling and connection recovery, keeping automatic
   refresh coalescing and rate-limit behavior intact.
-- [ ] Verify menu click and Command-R reach the same command, with visible progress
+- [x] Verify menu click and Command-R reach the same command, with visible progress
   and failure state; run core and affected app tests, then commit.
 
 ## Task 2: Safe core cleanup
@@ -68,23 +68,23 @@ resolution, workspace persistence, and agent lifecycle code.
 - Inject a `WorktreeCleanupGitHubChecking` dependency for fresh PR/stack metadata;
   production implementation resolves the monitored account using existing auth.
 
-- [ ] Write temporary-repository tests for clean merged success, open/closed-unmerged
+- [x] Write temporary-repository tests for clean merged success, open/closed-unmerged
   refusal, local ahead/diverged HEAD, dirty/untracked/ignored files, squash merge,
   deleted source branch, fetch failure, wrong origin, main/locked/external worktrees,
   symlink escape, and complete versus incomplete/partially merged stacks.
-- [ ] Add stale-preview tests: changed HEAD, configuration, account, or session set
+- [x] Add stale-preview tests: changed HEAD, configuration, account, or session set
   must stop no sessions and remove nothing. Test multiple links to one worktree.
-- [ ] Add tests proving no stop on failed preflight, post-stop edits prevent removal,
+- [x] Add tests proving no stop on failed preflight, post-stop edits prevent removal,
   failures retain links, success preserves branch/history, and bulk results continue
   reporting independent failures. Cover concurrent launch/restart/cleanup exclusion.
-- [ ] Run the focused tests to demonstrate missing behavior before implementation.
-- [ ] Implement preview using fresh remote metadata and exact fetched-head equality;
+- [x] Run the focused tests to demonstrate missing behavior before implementation.
+- [x] Implement preview using fresh remote metadata and exact fetched-head equality;
   use a uniquely named temporary ref and remove only that ref with a SHA guard.
-- [ ] Implement serialized execution with pre-stop and pre-remove validation.
+- [x] Implement serialized execution with pre-stop and pre-remove validation.
   Use ordinary Git worktree removal from the owning checkout; never `--force`.
-- [ ] Make existing single-worktree removal check safety before stopping a session
+- [x] Make existing single-worktree removal check safety before stopping a session
   and share the new validated removal boundary where appropriate.
-- [ ] Run the complete core suite and commit.
+- [x] Run the complete core suite and commit.
 
 ## Task 3: Confirmation, selection, and validation build
 
@@ -98,16 +98,16 @@ resolution, workspace persistence, and agent lifecycle code.
 **Interfaces:** Main-actor observable model owns scan/preview/selection/execution
 state and delegates to the coordinator. No Git commands or safety policy in views.
 
-- [ ] Write tests proving scan/cancel do not stop anything, bulk approval passes only
+- [x] Write tests proving scan/cancel do not stop anything, bulk approval passes only
   eligible rows, selection starts empty, and individual execution passes only selected
   rows. Test disabled controls while busy, stale account/configuration, retryable
   failures, and successful board reload without losing notes or review history.
-- [ ] Run tests red, then implement the sheet with the exact choices in the spec.
+- [x] Run tests red, then implement the sheet with the exact choices in the spec.
   Render PR title/number/repository, path, agents, live states, and skip reasons.
-- [ ] Render and inspect both light/dark appearances with fake data; no real deletion.
-- [ ] Run all core tests, all app tests, `scripts/check.sh`, and `git diff --check`.
+- [x] Render and inspect both light/dark appearances with fake data; no real deletion.
+- [x] Run all core tests, all app tests, `scripts/check.sh`, and `git diff --check`.
   Use `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` for Swift/Xcode.
-- [ ] Obtain an independent safety review, resolve findings with regression tests,
+- [x] Obtain an independent safety review, resolve findings with regression tests,
   and repeat affected verification before committing.
 - [ ] Package a universal validation ZIP using `scripts/package-validation.sh`;
   verify signatures, architectures, checksum, and document installation instructions.

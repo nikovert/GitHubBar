@@ -85,10 +85,10 @@ struct WorktreeCleanupLocal: Sendable {
         }
     }
 
-    func liveSessions(path: String, links: [AgentSessionLink]) async throws -> [String: String] {
+    func liveSessions(path: String, links: [AgentSessionLink]) async throws -> [String: WorktreeCleanupSessionIdentity] {
         guard let tmuxURL else { throw CleanupBlocked("Install tmux to verify session activity before cleanup.") }
         let response = await runner.run(executableURL: tmuxURL,
-            arguments: ["list-panes", "-a", "-F", "#{session_id}\t#{session_name}\t#{pane_current_path}"], environment: [:])
+            arguments: ["list-panes", "-a", "-F", "#{session_id}\t#{session_name}\t#{pane_current_path}\t#{pid}\t#{start_time}\t#{session_created}"], environment: [:])
         if response.exitCode != 0 {
             if response.exitCode == 1 && (response.standardError.contains("no server running") ||
                 (response.standardError.contains("error connecting to") && response.standardError.contains("No such file or directory"))) {
@@ -96,11 +96,15 @@ struct WorktreeCleanupLocal: Sendable {
             }
             throw CleanupBlocked("Could not verify tmux session activity.")
         }
-        var result: [String: String] = [:]
+        var result: [String: WorktreeCleanupSessionIdentity] = [:]
         let names = Set(links.compactMap(\.tmuxSessionName))
         for line in response.standardOutput.split(separator: "\n") {
             let fields = line.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
-            guard fields.count == 3, fields[0].first == "$", fields[0].dropFirst().allSatisfy(\.isNumber) else {
+            guard fields.count == 6, fields[0].first == "$", fields[0].count > 1,
+                  fields[0].dropFirst().allSatisfy(\.isNumber),
+                  let pid = Int(fields[3]), pid > 0,
+                  let started = Int(fields[4]), started > 0,
+                  let created = Int(fields[5]), created > 0 else {
                 throw CleanupBlocked("Unrecognized tmux session metadata.")
             }
             let cwd = Self.canonical(fields[2])
@@ -111,7 +115,8 @@ struct WorktreeCleanupLocal: Sendable {
                 }), cwd == path || cwd.hasPrefix(path + "/") else {
                     throw CleanupBlocked("A linked session's ownership or working directory could not be verified.")
                 }
-                result[fields[1]] = fields[0]
+                result[fields[1]] = WorktreeCleanupSessionIdentity(id: fields[0], serverPID: pid,
+                    serverStartedAt: started, sessionCreatedAt: created)
             } else if cwd == path || cwd.hasPrefix(path + "/") {
                 throw CleanupBlocked("An unlinked terminal session is using this worktree; close it manually first.")
             }

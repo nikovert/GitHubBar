@@ -91,7 +91,8 @@ For custom clients, see the [agent review protocol](agent-review-protocol.md).
 The Workspace Board has **Refresh** and **Clean up merged worktrees…** controls.
 Manual refresh during an existing reconciliation queues one follow-up refresh;
 repeated clicks coalesce. A disconnected account is rechecked. An explicit GitHub
-rate-limit reset remains respected rather than bypassed by the button.
+rate-limit reset remains respected, including after a partial refresh. One pending
+manual refresh runs when GitHub permits it again.
 
 Cleanup scans saved session links, including PRs no longer in the open workload.
 Scanning does not stop sessions or remove worktrees. Choose either:
@@ -105,12 +106,15 @@ Scanning does not stop sessions or remove worktrees. Choose either:
 Only GitHubBar-created linked worktrees under the configured root are eligible.
 The PR must be verified merged, and local HEAD must exactly match the PR head freshly
 fetched from origin and reported by GitHub. This also works after squash merges or
-source-branch deletion. Stack worktrees require all members verified merged; missing,
+source-branch deletion. Current stack membership is checked even when a session was
+originally linked to a single PR. Stacks require all members verified merged; missing,
 incomplete, or over-100-member stack metadata blocks cleanup.
 
 Modified, staged, untracked, ignored, sparse/hidden, locked, external, or unverifiable
 worktrees are skipped. GitHubBar checks again before stopping sessions and before
-removal. Changed configuration, HEAD, or session identity invalidates approval.
+removal. Changed configuration, HEAD, or session activity invalidates approval.
+Session checks include the tmux server PID/start time and session creation time,
+so restarting tmux and reusing a session ID requires a fresh scan.
 Unlinked tmux sessions prevent cleanup. Remaining same-user processes with a working
 directory inside the worktree also prevent removal; close them and scan again.
 

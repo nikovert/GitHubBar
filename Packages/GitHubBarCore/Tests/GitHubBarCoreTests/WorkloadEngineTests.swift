@@ -2,6 +2,36 @@ import XCTest
 @testable import GitHubBarCore
 
 final class WorkloadEngineTests: XCTestCase {
+    func testPartialRateLimitDefersQueuedAndSubsequentManualRefreshUntilReset() async throws {
+        let clock = ManuallyAdvancingRefreshClock(now: Date(timeIntervalSince1970: 100))
+        let client = SuspendedRefreshClient(partialFirstResult: true)
+        let engine = WorkloadEngine(accountConnection: ConnectedTestAccountConnection(), workloadClient: client,
+            settingsStore: InMemorySettingsStore(settings: AppSettings(refreshCadence: .manual)), clock: clock)
+        let launch = Task { await engine.send(.launch) }
+        await client.waitForStart()
+        await engine.send(.manualRefresh)
+        await client.release()
+        await launch.value
+        var count = await client.requestCount
+        XCTAssertEqual(count, 1, "A queued click must respect the partial result's reset deadline")
+        await engine.send(.manualRefresh)
+        await engine.send(.manualRefresh)
+        count = await client.requestCount
+        XCTAssertEqual(count, 1, "Later clicks must coalesce while GitHub is rate limited")
+        // Fail promptly on the old behavior instead of waiting for a retry it canceled.
+        guard count == 1 else { return }
+        for _ in 0..<1_000 where await clock.pendingSleepCount == 0 { await Task.yield() }
+        let sleepers = await clock.pendingSleepCount
+        XCTAssertEqual(sleepers, 1)
+        await clock.advance(by: 599)
+        count = await client.requestCount
+        XCTAssertEqual(count, 1)
+        await clock.advance(by: 1)
+        for _ in 0..<1_000 where await client.requestCount < 2 { await Task.yield() }
+        count = await client.requestCount
+        XCTAssertEqual(count, 2, "One deferred refresh must run once the deadline passes")
+    }
+
     func testManualRefreshDoesNotBypassKnownRateLimitReset() async throws {
         let client = RateLimitedRefreshClient()
         let engine = WorkloadEngine(accountConnection: ConnectedTestAccountConnection(), workloadClient: client)
@@ -205,6 +235,8 @@ private actor RateLimitedRefreshClient: GitHubWorkloadClient {
 }
 
 private actor SuspendedRefreshClient: GitHubWorkloadClient {
+    let partialFirstResult: Bool
+    init(partialFirstResult: Bool = false) { self.partialFirstResult = partialFirstResult }
     private(set) var requestCount = 0
     private(set) var logins: [String] = []
     private var gate: CheckedContinuation<Void, Never>?
@@ -217,6 +249,13 @@ private actor SuspendedRefreshClient: GitHubWorkloadClient {
         let number = requestCount
         logins.append(account.login)
         if number == 1 { await withCheckedContinuation { gate = $0 } }
+        if number == 1, partialFirstResult {
+            return .partial(WorkloadSnapshot(hostname: account.hostname, accountLogin: account.login,
+                capturedAt: Date(timeIntervalSince1970: 1), completeness: .partial,
+                availableRepositories: [], needsYourReview: [], authoredPullRequests: []),
+                ReconciliationMetadata(queryCost: 0, remainingPoints: 0,
+                    resetAt: Date(timeIntervalSince1970: 700), warnings: [], rateLimitEncountered: true))
+        }
         return .complete(WorkloadSnapshot(hostname: account.hostname, accountLogin: account.login,
             capturedAt: Date(timeIntervalSince1970: Double(number)), completeness: .complete,
             availableRepositories: [], needsYourReview: [], authoredPullRequests: []), .empty)

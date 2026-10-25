@@ -44,7 +44,7 @@ final class BackgroundRefreshVerificationTests: XCTestCase {
     }
 }
 
-private actor ManuallyAdvancingRefreshClock: RefreshClock {
+actor ManuallyAdvancingRefreshClock: RefreshClock {
     private var current: Date
     private var sleepers: [(deadline: Date, continuation: CheckedContinuation<Void, Error>)] = []
 

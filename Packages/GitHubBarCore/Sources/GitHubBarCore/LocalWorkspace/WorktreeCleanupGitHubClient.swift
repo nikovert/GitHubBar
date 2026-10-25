@@ -35,7 +35,7 @@ public struct WorktreeCleanupGitHubClient: WorktreeCleanupGitHubChecking {
                 members.contains { $0.url == key.url.absoluteString }
         } ?? false
         return WorktreeCleanupPR(title: pr.title, headSHA: pr.headRefOid, merged: pr.state == "MERGED",
-            stackComplete: complete, stackMerged: complete && members.allSatisfy { $0.state == "MERGED" })
+            hasStack: stack != nil, stackComplete: complete, stackMerged: complete && members.allSatisfy { $0.state == "MERGED" })
     }
 
     private static let query = """

@@ -3,6 +3,39 @@ import XCTest
 @testable import GitHubBarCore
 
 final class WorktreeCleanupTests: XCTestCase {
+    func testOrdinaryPRLinkRespectsCurrentUnmergedStack() async throws {
+        let f = try await CleanupFixture.make(metadata: CleanupMetadata(stackMerged: false))
+        defer { f.dispose() }
+        let preview = try await f.coordinator.preview(accountLogin: "tester")
+        XCTAssertFalse(try XCTUnwrap(preview.first).isEligible)
+    }
+
+    func testNewLinkedSessionBeforeFirstStopInvalidatesWholeApproval() async throws {
+        let f = try await CleanupFixture.make(running: true)
+        defer { f.dispose() }
+        let id = UUID()
+        let name = "githubbar-claude-widget-pr-12-\(id.uuidString.prefix(8).lowercased())"
+        try await f.store.update { $0.setSession(AgentSessionLink(id: id, subject: f.subject, agent: .claude,
+            worktreePath: f.path, tmuxSessionName: name, managedWorktree: true, state: .stopped)) }
+        let preview = try await f.coordinator.preview(accountLogin: "tester")
+        await f.runner.appearBeforeStop(name: name)
+        _ = await f.coordinator.execute(preview, accountLogin: "tester")
+        let kills = await f.runner.kills
+        XCTAssertTrue(kills.isEmpty, "A changed full session set must stop no sessions")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: f.path))
+    }
+
+    func testRestartedTmuxServerWithReusedIDInvalidatesApproval() async throws {
+        let f = try await CleanupFixture.make(running: true)
+        defer { f.dispose() }
+        let preview = try await f.coordinator.preview(accountLogin: "tester")
+        await f.runner.restartServer()
+        let results = await f.coordinator.execute(preview, accountLogin: "tester")
+        XCTAssertEqual(results.map(\.outcome), [.skipped])
+        let kills = await f.runner.kills
+        XCTAssertTrue(kills.isEmpty)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: f.path))
+    }
     func testLingeringProcessRetainsWorktreeAfterApprovedStop() async throws {
         let f = try await CleanupFixture.make(running: true)
         defer { f.dispose() }
@@ -220,7 +253,7 @@ private struct CleanupGitHub: WorktreeCleanupGitHubChecking {
     let metadata: CleanupMetadata
     func check(_ subject: BoardSubject, accountLogin: String) async throws -> WorktreeCleanupPR {
         WorktreeCleanupPR(title: "A useful change", headSHA: sha, merged: metadata.merged,
-            stackComplete: metadata.stackComplete, stackMerged: metadata.stackMerged)
+            hasStack: true, stackComplete: metadata.stackComplete, stackMerged: metadata.stackMerged)
     }
 }
 
@@ -297,6 +330,9 @@ private actor CleanupRunner: CommandRunning {
     var writesOnStop = false
     var removalFails = false
     var lingering = false
+    var serverPID = 100
+    var listCalls = 0
+    var appearingName: String?
     private(set) var kills: [String] = []
     init(remote: String, path: String, name: String, running: Bool) {
         self.remote = remote; self.path = path; self.name = name; self.running = running
@@ -307,15 +343,20 @@ private actor CleanupRunner: CommandRunning {
     func writeOnStop() { writesOnStop = true }
     func refuseRemoval() { removalFails = true }
     func leaveLingeringProcess() { lingering = true }
+    func restartServer() { serverPID = 200 }
+    func appearBeforeStop(name: String) { appearingName = name }
     func run(executableURL: URL, arguments: [String], environment: [String: String]) async -> CommandResult {
         if executableURL.lastPathComponent == "lsof" {
             return CommandResult(exitCode: 0, standardOutput: lingering ? "p123\nn\(path)\n" : "", standardError: "")
         }
         if executableURL.path == "/fake/tmux" {
             if arguments.first == "list-panes" {
+                listCalls += 1
+                let suffix = arguments.last?.contains("#{pid}") == true ? "\t\(serverPID)\t1700000000\t1700000001" : ""
                 return CommandResult(exitCode: 0, standardOutput:
-                    (running ? "\(liveID)\t\(name)\t\(path)\n" : "") +
-                    (unknown ? "$99\tunknown\t\(path)\n" : ""), standardError: "")
+                    (running ? "\(liveID)\t\(name)\t\(path)\(suffix)\n" : "") +
+                    (unknown ? "$99\tunknown\t\(path)\(suffix)\n" : "") +
+                    (listCalls >= 3 ? appearingName.map { "$2\t\($0)\t\(path)\(suffix)\n" } ?? "" : ""), standardError: "")
             }
             if arguments.first == "kill-session" {
                 kills.append(arguments.last!); running = false
