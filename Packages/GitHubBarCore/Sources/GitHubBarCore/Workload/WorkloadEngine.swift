@@ -152,6 +152,8 @@ public actor WorkloadEngine {
             }
             publish()
         case .manualRefresh:
+            if case let .rateLimited(until) = state.refreshHealth,
+               let until, until > (await clock.now()) { return }
             if resolvedAccount == nil {
                 let settings = await currentSettings()
                 await inspectAccount(selectedLogin: settings.selectedLogin, trigger: .manual)
@@ -235,6 +237,8 @@ public actor WorkloadEngine {
     }
 
     private func performReconciliation(trigger: ReconciliationTrigger) async {
+        if trigger == .manual, case let .rateLimited(until) = state.refreshHealth,
+           let until, until > (await clock.now()) { return }
         guard let account = resolvedAccount else { return }
         let reconciliationGeneration = generation
         let previousSnapshot = currentSnapshot

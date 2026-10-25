@@ -2,6 +2,16 @@ import XCTest
 @testable import GitHubBarCore
 
 final class WorkloadEngineTests: XCTestCase {
+    func testManualRefreshDoesNotBypassKnownRateLimitReset() async throws {
+        let client = RateLimitedRefreshClient()
+        let engine = WorkloadEngine(accountConnection: ConnectedTestAccountConnection(), workloadClient: client)
+        await engine.send(.launch)
+        await engine.send(.manualRefresh)
+        let count = await client.count
+        XCTAssertEqual(count, 1)
+        let state = try await currentState(of: engine)
+        guard case .rateLimited = state.refreshHealth else { return XCTFail("Keep rate-limit feedback visible") }
+    }
     func testManualClicksDuringRefreshCoalesceAndPublishFollowup() async throws {
         let client = SuspendedRefreshClient()
         let engine = WorkloadEngine(accountConnection: ConnectedTestAccountConnection(), workloadClient: client)
@@ -182,6 +192,15 @@ private actor RecoveringConnection: AccountConnection {
         attempts += 1
         if attempts == 1 { return .connectionRequired }
         return await ConnectedTestAccountConnection().inspect(selectedLogin: selectedLogin)
+    }
+}
+
+private actor RateLimitedRefreshClient: GitHubWorkloadClient {
+    var count = 0
+    func reconcile(account: ResolvedAccount) async -> WorkloadReconciliationResult {
+        count += 1
+        return .failed(.rateLimited, ReconciliationMetadata(queryCost: 0, remainingPoints: 0,
+            resetAt: Date().addingTimeInterval(600), warnings: [], rateLimitEncountered: true))
     }
 }
 

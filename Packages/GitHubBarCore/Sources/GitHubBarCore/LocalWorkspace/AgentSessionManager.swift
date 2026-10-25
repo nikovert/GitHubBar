@@ -6,6 +6,20 @@ public actor AgentSessionManager {
     private let gitURL: URL
     private let tmuxURL: URL?
     private let agentURLs: [AgentKind: URL]
+    private var operationInProgress = false
+
+    func exclusively<T: Sendable>(_ operation: @Sendable () async throws -> T) async throws -> T {
+        try beginOperation()
+        defer { operationInProgress = false }
+        return try await operation()
+    }
+
+    private func beginOperation() throws {
+        guard !operationInProgress else {
+            throw AgentSessionLaunchError.commandFailed("A workspace operation is already in progress. Try again when it finishes.")
+        }
+        operationInProgress = true
+    }
 
     public init(
         store: LocalWorkspaceStore,
@@ -22,6 +36,8 @@ public actor AgentSessionManager {
     }
 
     public func launch(subject: BoardSubject, agent: AgentKind) async throws -> AgentSessionLink {
+        try beginOperation()
+        defer { operationInProgress = false }
         let document = try await store.load()
         let configuration = document.configuration
         guard let checkoutPath = configuration.repositoryCheckouts[subject.key.repositoryNameWithOwner],
@@ -90,6 +106,8 @@ public actor AgentSessionManager {
         worktreePath: String,
         tmuxSessionName: String?
     ) async throws -> AgentSessionLink {
+        try beginOperation()
+        defer { operationInProgress = false }
         guard worktreePath.hasPrefix("/"), FileManager.default.fileExists(atPath: worktreePath) else {
             throw AgentSessionLaunchError.invalidPath
         }
@@ -104,6 +122,12 @@ public actor AgentSessionManager {
     }
 
     public func stop(id: UUID) async throws {
+        try beginOperation()
+        defer { operationInProgress = false }
+        try await stopUnchecked(id: id)
+    }
+
+    private func stopUnchecked(id: UUID) async throws {
         let session = try await storedSession(id: id)
         if let target = session.tmuxSessionTarget {
             guard let tmuxURL else { throw AgentSessionLaunchError.missingExecutable("tmux") }
@@ -121,6 +145,8 @@ public actor AgentSessionManager {
     }
 
     public func restart(id: UUID) async throws -> AgentSessionLink {
+        try beginOperation()
+        defer { operationInProgress = false }
         let session = try await storedSession(id: id)
         guard let name = session.tmuxSessionName,
               let target = session.tmuxSessionTarget, let tmuxURL else {
@@ -153,6 +179,9 @@ public actor AgentSessionManager {
     }
 
     public func refreshStates() async throws -> [AgentSessionLink] {
+        guard !operationInProgress else { return try await store.load().sessions }
+        try beginOperation()
+        defer { operationInProgress = false }
         let document = try await store.load()
         guard let tmuxURL else { return document.sessions }
         var sessions = document.sessions
@@ -183,17 +212,20 @@ public actor AgentSessionManager {
     }
 
     public func unlink(id: UUID) async throws {
+        try beginOperation()
+        defer { operationInProgress = false }
         try await store.update { $0.removeSession(id: id) }
     }
 
     public func removeManagedWorktree(id: UUID) async throws {
+        try beginOperation()
+        defer { operationInProgress = false }
         let document = try await store.load()
         guard let session = document.sessions.first(where: { $0.id == id }),
               session.managedWorktree else { throw AgentSessionLaunchError.unmanagedWorktree }
         let root = URL(fileURLWithPath: document.configuration.worktreeRoot).standardizedFileURL.path
         let path = URL(fileURLWithPath: session.worktreePath).standardizedFileURL.path
         guard path.hasPrefix(root + "/") else { throw AgentSessionLaunchError.unmanagedWorktree }
-        try await stop(id: id)
         let status = await commandRunner.run(
             executableURL: gitURL,
             arguments: ["-C", path, "status", "--porcelain", "--ignored", "--untracked-files=all"],
@@ -201,8 +233,14 @@ public actor AgentSessionManager {
         )
         guard status.exitCode == 0 else { throw AgentSessionLaunchError.commandFailed(status.standardError) }
         guard status.standardOutput.isEmpty else { throw AgentSessionLaunchError.dirtyWorktree }
+        try await stopUnchecked(id: id)
+        let checkedAgain = await commandRunner.run(executableURL: gitURL,
+            arguments: ["-C", path, "status", "--porcelain", "--ignored", "--untracked-files=all"], environment: [:])
+        guard checkedAgain.exitCode == 0, checkedAgain.standardOutput.isEmpty else {
+            throw AgentSessionLaunchError.dirtyWorktree
+        }
         try await run(gitURL, arguments: ["-C", path, "worktree", "remove", path])
-        try await unlink(id: id)
+        try await store.update { $0.removeSession(id: id) }
     }
 
     private func storedSession(id: UUID) async throws -> AgentSessionLink {
@@ -241,7 +279,7 @@ public actor AgentSessionManager {
         "'" + value.replacingOccurrences(of: "'", with: "'\\''") + "'"
     }
 
-    private static func repositoryNameWithOwner(fromRemoteURL remoteURL: String) -> String? {
+    static func repositoryNameWithOwner(fromRemoteURL remoteURL: String) -> String? {
         let remote = remoteURL.trimmingCharacters(in: .whitespacesAndNewlines)
         let path: String
         if remote.hasPrefix("git@github.com:") {
