@@ -31,6 +31,7 @@ final class WorkspaceModel {
     private(set) var monitoredAccountLogin: String?
     private(set) var reviewContexts: [String: AgentPRContext] = [:]
     var selectedSubject: BoardSubject?
+    private var navigationPullRequest: PullRequestPresentation?
     var errorMessage: String?
 
     @ObservationIgnored private let store: LocalWorkspaceStore
@@ -104,14 +105,43 @@ final class WorkspaceModel {
     }
 
     func updateWorkload(_ state: AppPresentationState) {
+        let previousLogin = monitoredAccountLogin
         if case let .connected(login, _) = state.accountConnection {
             monitoredAccountLogin = login
         } else {
             monitoredAccountLogin = nil
         }
+        if previousLogin?.lowercased() != monitoredAccountLogin?.lowercased() {
+            if let navigationPullRequest,
+               selectedSubject?.key == (try? PullRequestKey(url: navigationPullRequest.url)) {
+                selectedSubject = nil
+            }
+            navigationPullRequest = nil
+        }
         reviewContexts = WorkspaceReviewContext.contexts(in: state)
         cleanup.updateAccount(monitoredAccountLogin)
         syncReviewContexts()
+    }
+
+    func openPullRequest(_ pullRequest: PullRequestPresentation) {
+        guard let key = try? PullRequestKey(url: pullRequest.url) else { return }
+        navigationPullRequest = pullRequest
+        selectedSubject = .pullRequest(key)
+    }
+
+    func pullRequests(in state: AppPresentationState) -> [PullRequestPresentation] {
+        var result = state.needsYourReview + state.authoredPullRequests
+        guard let navigationPullRequest, let key = try? PullRequestKey(url: navigationPullRequest.url) else {
+            return result
+        }
+        let current = (result + state.pullRequestStacks.flatMap(\.pullRequests)).first {
+            (try? PullRequestKey(url: $0.url)) == key
+        }
+        let selected = current.map { $0.updatedAt >= navigationPullRequest.updatedAt ? $0 : navigationPullRequest }
+            ?? navigationPullRequest
+        result.removeAll { (try? PullRequestKey(url: $0.url)) == key }
+        result.append(selected)
+        return result
     }
 
     private func syncReviewContexts() {

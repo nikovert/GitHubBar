@@ -8,7 +8,7 @@ struct WorkspaceBoardView: View {
     @State private var showsCleanup = false
 
     private var pullRequests: [PullRequestPresentation] {
-        appModel.state.needsYourReview + appModel.state.authoredPullRequests
+        workspace.pullRequests(in: appModel.state)
     }
 
     private var subjects: [BoardSubject] {

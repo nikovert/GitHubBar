@@ -9,6 +9,10 @@ JSON file directly while GitHubBar is running.
 ## Set up
 
 Build this fork with full Xcode, then open **Workspace Board…** in the menu.
+Click a PR in the menu or search results to select it in the board. Right-click opens
+its GitHub page directly. Stack summary rows select the displayed PR; hover or use
+the right arrow to access the stack submenu. Search results outside your current list
+carry their title, author and available review metadata into the board.
 Under **Workspace setup**, provide an absolute path to the local checkout for each
 repository and an absolute worktree root outside those checkouts. New worktrees fetch
 `pull/NUMBER/head` from the checkout's `origin` remote. GitHubBar refuses to launch
@@ -24,8 +28,9 @@ command -v claude
 ```
 
 The **New Codex worktree** and **New Claude worktree** buttons fetch the PR head, create a
-new local branch/worktree, and start the agent in a named tmux session. The menu's PR row
-opens the running session in Terminal. You can also pin an existing worktree and optional
+new local branch/worktree, and start the agent in a named tmux session. Use **Jump to
+session** in the PR submenu or the board to open a running session in Terminal.
+You can also pin an existing worktree and optional
 tmux session name in the board. A session pinned to a stack is available from its member
 PRs. Stopping kills only the linked tmux session. Restarting starts it again in the same
 worktree.

@@ -3,6 +3,7 @@ import SwiftUI
 
 struct PRSearchView: View {
     @Bindable var model: PRSearchModel
+    var openPullRequest: (PullRequestPresentation) -> Void = { _ in }
     @FocusState private var searchFocused: Bool
 
     var body: some View {
@@ -152,7 +153,7 @@ struct PRSearchView: View {
                 Text(empty).font(.callout).foregroundStyle(.secondary)
             } else {
                 ForEach(results.prefix(limit.wrappedValue)) { result in
-                    PRSearchResultRow(result: result)
+                    PRSearchResultRow(result: result, openPullRequest: openPullRequest)
                 }
                 if results.count > limit.wrappedValue {
                     Button("Show more (\(results.count - limit.wrappedValue) remaining)") { limit.wrappedValue += 50 }
@@ -162,14 +163,32 @@ struct PRSearchView: View {
     }
 }
 
-private struct PRSearchResultRow: View {
+struct PRSearchResultRow: View {
     let result: PRSearchResult
+    let openPullRequest: (PullRequestPresentation) -> Void
+    var openGitHub: (URL) -> Void = { NSWorkspace.shared.open($0) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Link(destination: result.pullRequest.url) {
-                Text(result.pullRequest.title).font(.headline).multilineTextAlignment(.leading)
+            Button { openPullRequest(result.pullRequest) } label: {
+                resultContent
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Open \(result.pullRequest.title) in Workspace Board")
+            if result.source == .code || result.source == .file {
+                Link("Files changed", destination: result.filesURL).font(.caption)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
+        .background(SecondaryClickCapture { openGitHub(result.pullRequest.url) })
+        .help("Click to open Workspace Board. Right-click to open on GitHub.")
+    }
+
+    private var resultContent: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(result.pullRequest.title).font(.headline).multilineTextAlignment(.leading)
             HStack {
                 Text("\(result.pullRequest.repositoryNameWithOwner)#\(result.pullRequest.number)")
                 Text("· \(result.pullRequest.author?.displayName ?? "Unknown author")")
@@ -181,21 +200,16 @@ private struct PRSearchResultRow: View {
                 Text([result.source.rawValue, result.lineKind?.rawValue, result.path].compactMap { $0 }.joined(separator: " · "))
                     .font(.caption.weight(.medium))
                 Spacer()
-                if result.source == .code || result.source == .file {
-                    Link("Files changed", destination: result.filesURL).font(.caption)
-                }
             }
             Text(result.excerpt)
                 .font(result.source == .code ? .system(.caption, design: .monospaced) : .callout)
                 .lineLimit(5)
-                .textSelection(.enabled)
             if !result.coverage.codeComplete || !result.coverage.fileListComplete {
                 Text(result.coverage.reasons.isEmpty ? "Code coverage incomplete" : result.coverage.reasons.joined(separator: " · "))
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
-        .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
+        .contentShape(Rectangle())
     }
 }

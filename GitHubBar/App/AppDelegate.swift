@@ -34,7 +34,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         let model = AppModel(engine: engine)
         let searchModel = PRSearchModel(service: CorePRSearchService())
-        let searchWindowController = PRSearchWindowController(model: searchModel)
         let workspaceStore = LocalWorkspaceStore()
         let reviewStore = AgentReviewStore()
         let reviewAgentModel = ReviewAgentModel(store: reviewStore)
@@ -46,6 +45,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let workspaceWindowController = WorkspaceWindowController(
             appModel: model, workspaceModel: workspaceModel
         )
+        let openPullRequest: (PullRequestPresentation) -> Void = { [weak workspaceWindowController] pullRequest in
+            workspaceWindowController?.show(pullRequest: pullRequest)
+        }
+        let searchWindowController = PRSearchWindowController(model: searchModel, openPullRequest: openPullRequest)
         let settingsWindowController = SettingsWindowController(
             appModel: model,
             updateController: UpdateControllerFactory.make(),
@@ -58,7 +61,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             openWorkspace: { [weak workspaceWindowController] subject in
                 workspaceWindowController?.show(subject: subject)
             },
-            openSearch: { [weak searchWindowController] in searchWindowController?.show() }
+            openSearch: { [weak searchWindowController] in searchWindowController?.show() },
+            openPullRequest: openPullRequest
         )
         let statusItemController = StatusItemController(
             appModel: model,

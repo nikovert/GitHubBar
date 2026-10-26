@@ -222,8 +222,7 @@ extension StatusItemController: NSMenuDelegate {
         _ pullRequest: PullRequestPresentation,
         stackRowContext: StatusMenuStackRowContext? = nil,
         stackMemberSection: StatusMenuSection? = nil,
-        width: CGFloat = StatusItemController.menuWidth,
-        keepsMenuOpenAfterOpening: Bool = false
+        width: CGFloat = StatusItemController.menuWidth
     ) -> NSMenuItem {
         let key = try? PullRequestKey(url: pullRequest.url)
         let memberStack = appModel.state.pullRequestStacks.first { stack in
@@ -267,20 +266,16 @@ extension StatusItemController: NSMenuDelegate {
                 )
             },
             stackMemberSection: stackMemberSection,
-            showsDisclosure: stackRowContext != nil
+            showsDisclosure: stackRowContext != nil || pinnedSessions.contains { $0.state == .running }
         )
         .environmentObject(avatarImageCache)
         .padding(.horizontal, 11)
         .frame(width: width, height: Self.pullRequestRowHeight)
-        let onClick: (() -> Void)? = stackRowContext == nil ? { [weak self] in
+        let onClick: () -> Void = { [weak self] in
             guard let self else { return }
-            if let session = pinnedSessions.first(where: { $0.state == .running }) {
-                self.statusMenu.cancelTracking()
-                self.workspaceModel.focus(session)
-            } else {
-                self.open(pullRequest.url, keepsMenuOpen: keepsMenuOpenAfterOpening)
-            }
-        } : nil
+            self.statusMenu.cancelTracking()
+            self.actions.openPullRequest(pullRequest)
+        }
         let hosting = StatusMenuRowHostingView(
             rootView: row,
             highlightState: highlightState,
@@ -290,9 +285,9 @@ extension StatusItemController: NSMenuDelegate {
                 stackMemberSection: stackMemberSection
             ),
             onSecondaryClick: { [weak self] in
-                guard let self, let subject else { return }
+                guard let self else { return }
                 self.statusMenu.cancelTracking()
-                self.actions.openWorkspace(subject)
+                self.actions.openGitHub(pullRequest.url)
             },
             onClick: onClick
         )
@@ -320,17 +315,21 @@ extension StatusItemController: NSMenuDelegate {
         item.toolTip = pullRequestTooltip(for: pullRequest, stack: stackRowContext?.stack)
             + (boardLabel.isEmpty ? "" : " · \(boardLabel)")
             + " · \(priority.reason)"
-            + " · Right-click for workspace"
+            + " · Click for Workspace Board · Right-click to open on GitHub"
         if let stackRowContext {
             item.submenu = stackSubmenu(for: stackRowContext.stack)
-        } else {
-            item.target = self
-            item.action = #selector(openURL(_:))
-            item.representedObject = StatusMenuURLTarget(
-                url: pullRequest.url,
-                keepsMenuOpen: keepsMenuOpenAfterOpening
-            )
+        } else if pinnedSessions.contains(where: { $0.state == .running }) {
+            let submenu = NSMenu()
+            submenu.autoenablesItems = false
+            submenu.delegate = self
+            for session in pinnedSessions where session.state == .running {
+                submenu.addItem(sessionJumpItem(session))
+            }
+            item.submenu = submenu
         }
+        item.target = self
+        item.action = #selector(openPullRequestForItem(_:))
+        item.representedObject = StatusMenuReviewTarget(pullRequest: pullRequest)
         return item
     }
 
@@ -373,8 +372,7 @@ extension StatusItemController: NSMenuDelegate {
                 pullRequestItem(
                     pullRequest,
                     stackMemberSection: stackMemberSection(for: pullRequest),
-                    width: submenuWidth,
-                    keepsMenuOpenAfterOpening: true
+                    width: submenuWidth
                 )
             )
             submenu.addItem(agentReviewItem(for: pullRequest))
@@ -401,16 +399,18 @@ extension StatusItemController: NSMenuDelegate {
             board.representedObject = StatusMenuBoardTarget(subject: .stack(key))
             submenu.addItem(board)
             for session in workspaceModel.document.sessions(for: .stack(key)) where session.state == .running {
-                let jump = NSMenuItem(
-                    title: "Jump to \(session.agent.rawValue.capitalized) session",
-                    action: #selector(focusSessionForItem(_:)), keyEquivalent: ""
-                )
-                jump.target = self
-                jump.representedObject = StatusMenuSessionTarget(session: session)
-                submenu.addItem(jump)
+                submenu.addItem(sessionJumpItem(session))
             }
         }
         return submenu
+    }
+
+    private func sessionJumpItem(_ session: AgentSessionLink) -> NSMenuItem {
+        let item = NSMenuItem(title: "Jump to \(session.agent.rawValue.capitalized) session",
+            action: #selector(focusSessionForItem(_:)), keyEquivalent: "")
+        item.target = self
+        item.representedObject = StatusMenuSessionTarget(session: session)
+        return item
     }
 
     private func seeAllItem(for section: StatusMenuSection) -> NSMenuItem {
@@ -548,6 +548,14 @@ extension StatusItemController: NSMenuDelegate {
         statusMenuKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) {
             [weak self] event in
             guard let self, self.isStatusMenuOpen else { return event }
+            if event.modifierFlags.intersection([.command, .option, .control, .shift]).isEmpty,
+               [36, 76, 49].contains(event.keyCode),
+               let item = self.highlightedStatusMenuItem,
+               item.representedObject is StatusMenuReviewTarget,
+               item.action == #selector(self.openPullRequestForItem(_:)) {
+                self.openPullRequestForItem(item)
+                return nil
+            }
             let modifiers = event.modifierFlags.intersection([
                 .command,
                 .option,
@@ -706,6 +714,12 @@ extension StatusItemController: NSMenuDelegate {
     @objc private func openWorkspaceForItem(_ sender: NSMenuItem) {
         guard let target = sender.representedObject as? StatusMenuBoardTarget else { return }
         actions.openWorkspace(target.subject)
+    }
+
+    @objc private func openPullRequestForItem(_ sender: NSMenuItem) {
+        guard let target = sender.representedObject as? StatusMenuReviewTarget else { return }
+        statusMenu.cancelTracking()
+        actions.openPullRequest(target.pullRequest)
     }
 
     @objc private func focusSessionForItem(_ sender: NSMenuItem) {

@@ -21,6 +21,11 @@ final class WorkspaceWindowController {
         Task { await workspaceModel.reload() }
     }
 
+    func show(pullRequest: PullRequestPresentation) {
+        workspaceModel.openPullRequest(pullRequest)
+        show()
+    }
+
     private func makeWindow() -> NSWindow {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 950, height: 720),

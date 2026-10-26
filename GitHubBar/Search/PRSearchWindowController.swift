@@ -1,12 +1,17 @@
 import AppKit
+import GitHubBarCore
 import SwiftUI
 
 @MainActor
 final class PRSearchWindowController: NSObject, NSWindowDelegate {
     private let model: PRSearchModel
     private var window: NSWindow?
+    private let openPullRequest: (PullRequestPresentation) -> Void
 
-    init(model: PRSearchModel) { self.model = model }
+    init(model: PRSearchModel, openPullRequest: @escaping (PullRequestPresentation) -> Void) {
+        self.model = model
+        self.openPullRequest = openPullRequest
+    }
 
     func show() {
         if window == nil {
@@ -19,7 +24,7 @@ final class PRSearchWindowController: NSObject, NSWindowDelegate {
             window.isReleasedWhenClosed = false
             window.delegate = self
             window.contentMinSize = NSSize(width: 720, height: 560)
-            window.contentView = NSHostingView(rootView: PRSearchView(model: model))
+            window.contentView = NSHostingView(rootView: PRSearchView(model: model, openPullRequest: openPullRequest))
             window.center()
             self.window = window
         }

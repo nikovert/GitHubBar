@@ -28,6 +28,7 @@
 		613BD46ADBAE74F5476ADF1B /* GlobalHotKeyController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E92E7653755A1285ACBB51A /* GlobalHotKeyController.swift */; };
 		65679A108BD941742103A172 /* MacLaunchAtLoginController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 413C65D56097A21D67B2DFEC /* MacLaunchAtLoginController.swift */; };
 		6C570A0F606EA7D7AE56A2A2 /* UpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C39E485BC4A03542878D61F2 /* UpdateController.swift */; };
+		752E7DDFACF4A96ADA269FFC /* SecondaryClickCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44912EF6590A1A171739D2DF /* SecondaryClickCapture.swift */; };
 		7F34C87445845F6B6FC3E13A /* ReviewAgentModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41286F1DF86FDC6F86CC7641 /* ReviewAgentModelTests.swift */; };
 		7F3C916A59C7CBD9D337C4B8 /* AppearanceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 464705010379FB9898CD5D01 /* AppearanceController.swift */; };
 		892ECD2AA26BF1998A647220 /* ReviewAgentSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 564AA6B61C4D0A98BB3F9A45 /* ReviewAgentSettingsView.swift */; };
@@ -37,6 +38,7 @@
 		A4A1B165B64F2919B077E0F2 /* PRSearchWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC906FEE759C48B0E09140D2 /* PRSearchWindowController.swift */; };
 		A9BA698E6D882DD71A2D7480 /* UpdateControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B9813F72CF2F4CB20333095 /* UpdateControllerTests.swift */; };
 		A9EFD432CF5BB3454F211213 /* SparkleUpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD9F73DA43CC365AD4AB94DE /* SparkleUpdateController.swift */; };
+		AB683DCE8F4E3C2107D0D9BA /* PRNavigationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 671581934811F4CD6E829E4E /* PRNavigationTests.swift */; };
 		AC9E4DF525406EC58650E413 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FCA7F94A99E37FDFC8C9470 /* AppDelegate.swift */; };
 		B172F00F0C2EC95745C3DF43 /* AvatarImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 802629216ED5CE8877D7837C /* AvatarImageCache.swift */; };
 		B57BECFC45EE5DB408206EB1 /* StatusMenuSizing.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6A38F19571B0CCF0410AD9F /* StatusMenuSizing.swift */; };
@@ -106,6 +108,7 @@
 		3B9813F72CF2F4CB20333095 /* UpdateControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateControllerTests.swift; sourceTree = "<group>"; };
 		41286F1DF86FDC6F86CC7641 /* ReviewAgentModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewAgentModelTests.swift; sourceTree = "<group>"; };
 		413C65D56097A21D67B2DFEC /* MacLaunchAtLoginController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacLaunchAtLoginController.swift; sourceTree = "<group>"; };
+		44912EF6590A1A171739D2DF /* SecondaryClickCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecondaryClickCapture.swift; sourceTree = "<group>"; };
 		464705010379FB9898CD5D01 /* AppearanceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceController.swift; sourceTree = "<group>"; };
 		48506E36134F710544DC49CA /* StatusItemMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemMenu.swift; sourceTree = "<group>"; };
 		4E92E7653755A1285ACBB51A /* GlobalHotKeyController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotKeyController.swift; sourceTree = "<group>"; };
@@ -114,6 +117,7 @@
 		599E1CA2EE38488262F59055 /* PRSearchModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PRSearchModel.swift; sourceTree = "<group>"; };
 		5CE41C26ABE21A457E830821 /* ApplicationMenuController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationMenuController.swift; sourceTree = "<group>"; };
 		630C5AEE85A4FD354FCE9420 /* PRSearchScope.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PRSearchScope.swift; sourceTree = "<group>"; };
+		671581934811F4CD6E829E4E /* PRNavigationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PRNavigationTests.swift; sourceTree = "<group>"; };
 		67E8449FC24081BFF635655D /* ReviewAgentModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewAgentModel.swift; sourceTree = "<group>"; };
 		685E6864EC15CF08046AF835 /* AccountConnectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountConnectionView.swift; sourceTree = "<group>"; };
 		6FCA7F94A99E37FDFC8C9470 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -195,6 +199,7 @@
 		1C30734206E57128FA29FCC6 /* GitHubBarTests */ = {
 			isa = PBXGroup;
 			children = (
+				671581934811F4CD6E829E4E /* PRNavigationTests.swift */,
 				90A3CCC49880BD2AAACFA942 /* PRSearchModelTests.swift */,
 				FA42CDC7AF3190F12EFC399E /* PRSearchRenderingTests.swift */,
 				C213542E823D25A9490016A3 /* PRSearchScopeTests.swift */,
@@ -309,6 +314,7 @@
 				630C5AEE85A4FD354FCE9420 /* PRSearchScope.swift */,
 				B855EA0CB54A1D9D48AF9744 /* PRSearchView.swift */,
 				DC906FEE759C48B0E09140D2 /* PRSearchWindowController.swift */,
+				44912EF6590A1A171739D2DF /* SecondaryClickCapture.swift */,
 			);
 			path = Search;
 			sourceTree = "<group>";
@@ -473,6 +479,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AB683DCE8F4E3C2107D0D9BA /* PRNavigationTests.swift in Sources */,
 				BD95E86C8DD64225EEFEE0F0 /* PRSearchModelTests.swift in Sources */,
 				552B0CD68C965C53BEE612BB /* PRSearchRenderingTests.swift in Sources */,
 				222BCA7B2242E37AA295D873 /* PRSearchScopeTests.swift in Sources */,
@@ -520,6 +527,7 @@
 				92D81BE0493C6FAEDF136177 /* RepositoryScopeControl.swift in Sources */,
 				EBA7FB57F6A161DC0BD67DC3 /* ReviewAgentModel.swift in Sources */,
 				892ECD2AA26BF1998A647220 /* ReviewAgentSettingsView.swift in Sources */,
+				752E7DDFACF4A96ADA269FFC /* SecondaryClickCapture.swift in Sources */,
 				C0EFC1B2F18736A240AC0F16 /* SettingsView.swift in Sources */,
 				5545D32255BB93E13B0DD1B9 /* SettingsWindowController.swift in Sources */,
 				A9EFD432CF5BB3454F211213 /* SparkleUpdateController.swift in Sources */,
