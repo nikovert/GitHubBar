@@ -9,7 +9,7 @@ Keep your review queue in the menu bar. Open the full workspace to prioritize PR
 read diffs, draft and submit reviews, ask an agent questions, and jump into the
 terminal session attached to your worktree.
 
-[Build the latest](#build-from-source) · [Published downloads](https://github.com/nikovert/GitHubBar/releases) · [Workspace guide](docs/review-workspace.md) · [Report an issue](https://github.com/nikovert/GitHubBar/issues)
+[**Download v0.6.0 for macOS**](https://github.com/nikovert/GitHubBar/releases/download/validation-v0.6.0-1/GitHubBar-validation-0.6.0-e922826d588c.zip) · [SHA-256](https://github.com/nikovert/GitHubBar/releases/download/validation-v0.6.0-1/GitHubBar-validation-0.6.0-e922826d588c.zip.sha256) · [Release notes](https://github.com/nikovert/GitHubBar/releases/tag/validation-v0.6.0-1) · [Build from source](#build-from-source)
 
 ![Native dark-mode review workspace with split diffs, file navigation, review controls, and the agent chat panel](docs/assets/workspace-review-dark.png)
 
@@ -19,7 +19,7 @@ chat panel is shown before connecting an agent.*
 > This is a development fork of
 > [FranciscoMoretti/GitHubBar](https://github.com/FranciscoMoretti/GitHubBar), with a
 > larger management workspace, in-app code review, and local agent integrations.
-> The screenshots show current `main`; published validation downloads may lag behind it.
+> The v0.6.0 validation download includes the workspace shown in these screenshots.
 
 ## Know what needs your attention
 
@@ -124,10 +124,10 @@ GitHubBar requires **macOS 14 or newer** and supports **Apple Silicon and Intel*
    gh auth login
    ```
 
-2. Choose a validation ZIP and its adjacent `.sha256` file from
-   [this fork's releases](https://github.com/nikovert/GitHubBar/releases).
-   Check the release notes for included features; build from source for the latest
-   workspace shown above.
+2. Download the [v0.6.0 app ZIP](https://github.com/nikovert/GitHubBar/releases/download/validation-v0.6.0-1/GitHubBar-validation-0.6.0-e922826d588c.zip) and its
+   [SHA-256 checksum](https://github.com/nikovert/GitHubBar/releases/download/validation-v0.6.0-1/GitHubBar-validation-0.6.0-e922826d588c.zip.sha256).
+   This universal build supports both Apple Silicon and Intel Macs.
+   [Release notes](https://github.com/nikovert/GitHubBar/releases/tag/validation-v0.6.0-1) describe the included features.
 
 3. Verify the downloaded ZIP, then unzip and move `GitHubBar.app` to **Applications**:
 
