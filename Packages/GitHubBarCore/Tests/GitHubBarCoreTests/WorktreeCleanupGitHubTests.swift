@@ -33,6 +33,10 @@ final class WorktreeCleanupGitHubTests: XCTestCase {
         let result = try await makeClient().check(.stack(key), accountLogin: "tester")
         XCTAssertTrue(result.merged && result.stackComplete && result.stackMerged)
         XCTAssertEqual(result.title, "Finished change")
+        XCTAssertEqual(result.body, "Handle missing sensor inputs.\n\nKeep the fallback active.")
+        XCTAssertEqual(result.stackPullRequests.map(\.key.number), [12, 13])
+        XCTAssertEqual(result.stackPullRequests.map(\.title), ["Stack change 12", "Stack change 13"])
+        XCTAssertEqual(result.stackPullRequests.last?.description, "Description for change 13.")
     }
 
     func testWrongViewerAndGraphQLErrorsFailClosed() async throws {
@@ -45,10 +49,12 @@ final class WorktreeCleanupGitHubTests: XCTestCase {
     private var key: PullRequestKey { try! PullRequestKey(url: URL(string: "https://github.com/acme/widget/pull/12")!) }
     private func makeClient(states: [String] = ["MERGED", "MERGED"], urls: [Int] = [12, 13], extra: String = "") -> WorktreeCleanupGitHubClient {
         var nodes: [Any] = zip(states, urls).map { state, number in
-            ["pullRequest": ["url": "https://github.com/acme/widget/pull/\(number)", "state": state]]
+            ["pullRequest": ["url": "https://github.com/acme/widget/pull/\(number)", "state": state,
+                             "title": "Stack change \(number)", "bodyText": "Description for change \(number)."]]
         }
         if extra == "null" { nodes[1] = NSNull() }
-        var pr: [String: Any] = ["title": "Finished change", "state": "MERGED", "headRefOid": String(repeating: "a", count: 40),
+        var pr: [String: Any] = ["title": "Finished change", "bodyText": "Handle missing sensor inputs.\n\nKeep the fallback active.",
+            "state": "MERGED", "headRefOid": String(repeating: "a", count: 40),
             "stack": ["size": extra == "size" ? 3 : 2, "entries": ["nodes": nodes, "pageInfo": ["hasNextPage": extra == "truncated"]]]]
         if extra == "no-stack" { pr["stack"] = NSNull() }
         var json: [String: Any] = ["data": ["viewer": ["login": extra == "viewer" ? "wrong" : "tester"],

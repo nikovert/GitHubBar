@@ -1,14 +1,32 @@
 import Foundation
 
+public struct WorktreeCleanupPRSummary: Identifiable, Equatable, Sendable {
+    public var id: PullRequestKey { key }
+    public let key: PullRequestKey
+    public let title: String
+    public let description: String
+
+    public init(key: PullRequestKey, title: String, body: String) {
+        self.key = key
+        self.title = title
+        let text = body.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        description = text.count > 280 ? String(text.prefix(277)) + "…" : text
+    }
+}
+
 public struct WorktreeCleanupPR: Equatable, Sendable {
     public var title: String
+    public var body: String
+    public var stackPullRequests: [WorktreeCleanupPRSummary]
     public var headSHA: String
     public var merged: Bool
     public var hasStack: Bool
     public var stackComplete: Bool
     public var stackMerged: Bool
-    public init(title: String, headSHA: String, merged: Bool, hasStack: Bool = false, stackComplete: Bool = true, stackMerged: Bool = true) {
+    public init(title: String, headSHA: String, merged: Bool, hasStack: Bool = false, stackComplete: Bool = true, stackMerged: Bool = true,
+                body: String = "", stackPullRequests: [WorktreeCleanupPRSummary] = []) {
         self.title = title; self.headSHA = headSHA; self.merged = merged
+        self.body = body; self.stackPullRequests = stackPullRequests
         self.hasStack = hasStack
         self.stackComplete = stackComplete; self.stackMerged = stackMerged
     }
@@ -35,6 +53,7 @@ public struct WorktreeCleanupCandidate: Identifiable, Equatable, Sendable {
     public let liveSessions: [String: WorktreeCleanupSessionIdentity]
     public let accountLogin: String
     public let configuration: WorkspaceConfiguration
+    public var pullRequests: [WorktreeCleanupPRSummary] = []
     public var isEligible: Bool { skipReason == nil }
 }
 
@@ -101,12 +120,28 @@ public actor WorktreeCleanupCoordinator: WorktreeCleanupServicing {
         var sha = ""
         var live: [String: WorktreeCleanupSessionIdentity] = [:]
         var reason: String?
+        var pullRequests: [WorktreeCleanupPRSummary] = []
         do {
             guard !accountLogin.isEmpty else { throw CleanupBlocked("Connect a monitored account first.") }
+            let subjects = Set(links.map(\.subject)).sorted { $0.key.description < $1.key.description }
+            var metadata: [BoardSubject: WorktreeCleanupPR] = [:]
+            var metadataError: (any Error)?
+            for subject in subjects {
+                try Task.checkCancellation()
+                do {
+                    let pr = try await github.check(subject, accountLogin: accountLogin)
+                    metadata[subject] = pr
+                    let summaries = [WorktreeCleanupPRSummary(key: subject.key, title: pr.title, body: pr.body)] + pr.stackPullRequests
+                    for summary in summaries where !pullRequests.contains(where: { $0.key == summary.key }) {
+                        pullRequests.append(summary)
+                    }
+                } catch { metadataError = error }
+            }
+            title = pullRequests.first?.title ?? title
             try await local.validate(path: path, links: links, configuration: document.configuration)
-            for subject in Set(links.map(\.subject)) {
-                let pr = try await github.check(subject, accountLogin: accountLogin)
-                title = pr.title
+            if let metadataError { throw metadataError }
+            for subject in subjects {
+                guard let pr = metadata[subject] else { throw CleanupBlocked("PR information is unavailable.") }
                 guard pr.merged else { throw CleanupBlocked("The PR is not merged.") }
                 let wasStack: Bool
                 if case .stack = subject { wasStack = true } else { wasStack = false }
@@ -122,7 +157,7 @@ public actor WorktreeCleanupCoordinator: WorktreeCleanupServicing {
         } catch { reason = error.localizedDescription }
         return WorktreeCleanupCandidate(path: path, sessions: links, title: title, headSHA: sha,
             skipReason: reason, liveSessions: live, accountLogin: accountLogin,
-            configuration: document.configuration)
+            configuration: document.configuration, pullRequests: pullRequests)
     }
 
     private func remove(_ candidate: WorktreeCleanupCandidate, accountLogin: String) async -> WorktreeCleanupResult {

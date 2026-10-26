@@ -35,7 +35,11 @@ public struct WorktreeCleanupGitHubClient: WorktreeCleanupGitHubChecking {
                 members.contains { $0.url == key.url.absoluteString }
         } ?? false
         return WorktreeCleanupPR(title: pr.title, headSHA: pr.headRefOid, merged: pr.state == "MERGED",
-            hasStack: stack != nil, stackComplete: complete, stackMerged: complete && members.allSatisfy { $0.state == "MERGED" })
+            hasStack: stack != nil, stackComplete: complete, stackMerged: complete && members.allSatisfy { $0.state == "MERGED" },
+            body: pr.bodyText, stackPullRequests: members.compactMap { member in
+                guard let url = URL(string: member.url), let key = try? PullRequestKey(url: url) else { return nil }
+                return WorktreeCleanupPRSummary(key: key, title: member.title, body: member.bodyText)
+            })
     }
 
     private static let query = """
@@ -43,11 +47,11 @@ public struct WorktreeCleanupGitHubClient: WorktreeCleanupGitHubChecking {
       viewer { login }
       repository(owner: $owner, name: $name) {
         pullRequest(number: $number) {
-          title state headRefOid
+          title bodyText state headRefOid
           stack {
             size
             entries(first: 100) {
-              nodes { pullRequest { url state } }
+              nodes { pullRequest { url title bodyText state } }
               pageInfo { hasNextPage }
             }
           }
@@ -69,6 +73,7 @@ public struct WorktreeCleanupGitHubClient: WorktreeCleanupGitHubChecking {
     private struct Repository: Decodable { let pullRequest: PR? }
     private struct PR: Decodable {
         let title: String
+        let bodyText: String
         let state: String
         let headRefOid: String
         let stack: Stack?
@@ -76,6 +81,6 @@ public struct WorktreeCleanupGitHubClient: WorktreeCleanupGitHubChecking {
     private struct Stack: Decodable { let size: Int; let entries: Entries }
     private struct Entries: Decodable { let nodes: [Entry?]; let pageInfo: PageInfo }
     private struct Entry: Decodable { let pullRequest: Member? }
-    private struct Member: Decodable { let url: String; let state: String }
+    private struct Member: Decodable { let url: String; let title: String; let bodyText: String; let state: String }
     private struct PageInfo: Decodable { let hasNextPage: Bool }
 }

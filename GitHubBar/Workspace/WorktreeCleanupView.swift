@@ -44,6 +44,9 @@ struct WorktreeCleanupView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Label(result.outcome.rawValue.capitalized, systemImage: result.outcome == .removed ? "checkmark.circle" : "exclamationmark.circle")
                                     .font(.headline)
+                                if let candidate = model.candidates.first(where: { $0.path == result.path }) {
+                                    pullRequestDetails(candidate)
+                                }
                                 Text(result.path).font(.caption).textSelection(.enabled)
                                 Text(result.message).foregroundStyle(.secondary).textSelection(.enabled)
                             }
@@ -96,9 +99,7 @@ struct WorktreeCleanupView: View {
                                 .labelsHidden().toggleStyle(.checkbox).disabled(!row.isEligible)
                         }
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(row.title).font(.headline)
-                            Text(Array(Set(row.sessions.map { $0.subject.key.description })).sorted().joined(separator: ", "))
-                                .font(.subheadline)
+                            pullRequestDetails(row)
                             Text(row.path).font(.caption).textSelection(.enabled)
                             ForEach(row.sessions) { session in
                                 let live = session.tmuxSessionName.flatMap { row.liveSessions[$0] } != nil
@@ -115,6 +116,30 @@ struct WorktreeCleanupView: View {
                 }
                 if model.candidates.isEmpty {
                     Text("No linked worktrees to clean up.").foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    private func pullRequestDetails(_ candidate: WorktreeCleanupCandidate) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(candidate.pullRequests) { pr in
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(pr.title).font(.headline).fixedSize(horizontal: false, vertical: true)
+                    Link(pr.key.description, destination: pr.key.url).font(.caption)
+                    Text(pr.description.isEmpty ? "No PR description provided." : pr.description)
+                        .font(.subheadline).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .textSelection(.enabled)
+                }
+            }
+            ForEach(Array(Set(candidate.sessions.map { $0.subject.key }))
+                .filter { key in !candidate.pullRequests.contains(where: { $0.key == key }) }
+                .sorted { $0.description < $1.description }, id: \.self) { key in
+                VStack(alignment: .leading, spacing: 3) {
+                    Link(key.description, destination: key.url).font(.headline)
+                    Text("PR title and description unavailable.")
+                        .font(.subheadline).foregroundStyle(.secondary)
                 }
             }
         }

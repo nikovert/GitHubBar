@@ -100,6 +100,10 @@ rate-limit reset remains respected, including after a partial refresh. One pendi
 manual refresh runs when GitHub permits it again.
 
 Cleanup scans saved session links, including PRs no longer in the open workload.
+The preview and results show each PR's title, repository/number, and a short
+plain-text description excerpt, including stack members. PR links open GitHub for
+the full description. Details are also fetched for skipped worktrees; unavailable
+metadata is explicitly labelled and never makes a worktree eligible for removal.
 Scanning does not stop sessions or remove worktrees. Choose either:
 
 - **Stop and close all eligible worktrees** to explicitly approve the listed eligible

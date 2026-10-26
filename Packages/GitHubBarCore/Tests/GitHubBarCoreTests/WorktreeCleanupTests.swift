@@ -3,6 +3,32 @@ import XCTest
 @testable import GitHubBarCore
 
 final class WorktreeCleanupTests: XCTestCase {
+    func testSkippedWorktreeStillShowsPRAndStackDescriptions() async throws {
+        let f = try await CleanupFixture.make(stack: true)
+        defer { f.dispose() }
+        try Data("changed".utf8).write(to: URL(fileURLWithPath: f.path + "/file"))
+        let preview = try await f.coordinator.preview(accountLogin: "tester")
+        let row = try XCTUnwrap(preview.first)
+        XCTAssertFalse(row.isEligible)
+        XCTAssertEqual(row.title, "A useful change")
+        XCTAssertEqual(row.pullRequests.map(\.key.number), [12, 13])
+        XCTAssertEqual(row.pullRequests.map(\.title), ["A useful change", "Follow-up change"])
+        XCTAssertEqual(row.pullRequests.map(\.description), ["Handle missing inputs. Keep the fallback active.", "Update the caller."])
+        XCTAssertTrue(FileManager.default.fileExists(atPath: f.path))
+        let kills = await f.runner.kills
+        XCTAssertTrue(kills.isEmpty)
+    }
+
+    func testDescriptionExcerptHandlesEmptyMultilineAndLongUnicodeText() throws {
+        let key = try PullRequestKey(url: URL(string: "https://github.com/acme/widget/pull/12")!)
+        let empty = WorktreeCleanupPRSummary(key: key, title: "Empty", body: " \n\t")
+        XCTAssertEqual(empty.description, "")
+        let long = WorktreeCleanupPRSummary(key: key, title: "Long", body: String(repeating: "👨‍👩‍👧‍👦 ", count: 200))
+        XCTAssertLessThanOrEqual(long.description.count, 280)
+        XCTAssertTrue(long.description.hasSuffix("…"))
+        XCTAssertFalse(long.description.contains("\n"))
+    }
+
     func testOrdinaryPRLinkRespectsCurrentUnmergedStack() async throws {
         let f = try await CleanupFixture.make(metadata: CleanupMetadata(stackMerged: false))
         defer { f.dispose() }
@@ -107,6 +133,7 @@ final class WorktreeCleanupTests: XCTestCase {
         let preview = try await fixture.coordinator.preview(accountLogin: "tester")
         XCTAssertEqual(preview.count, 1)
         XCTAssertTrue(try XCTUnwrap(preview.first).isEligible, preview.first?.skipReason ?? "")
+        XCTAssertEqual(preview.first?.pullRequests.first?.description, "Handle missing inputs. Keep the fallback active.")
         XCTAssertTrue(FileManager.default.fileExists(atPath: fixture.path))
         let results = await fixture.coordinator.execute(preview, accountLogin: "tester")
         XCTAssertEqual(results.map(\.outcome), [.removed])
@@ -252,8 +279,13 @@ private struct CleanupGitHub: WorktreeCleanupGitHubChecking {
     let sha: String
     let metadata: CleanupMetadata
     func check(_ subject: BoardSubject, accountLogin: String) async throws -> WorktreeCleanupPR {
-        WorktreeCleanupPR(title: "A useful change", headSHA: sha, merged: metadata.merged,
-            hasStack: true, stackComplete: metadata.stackComplete, stackMerged: metadata.stackMerged)
+        let memberKey = try PullRequestKey(url: URL(string: "https://github.com/acme/widget/pull/13")!)
+        return WorktreeCleanupPR(title: "A useful change", headSHA: sha, merged: metadata.merged,
+            hasStack: true, stackComplete: metadata.stackComplete, stackMerged: metadata.stackMerged,
+            body: "Handle missing inputs.\n\nKeep the fallback active.", stackPullRequests: [
+                WorktreeCleanupPRSummary(key: subject.key, title: "Root duplicate", body: "Duplicate"),
+                WorktreeCleanupPRSummary(key: memberKey, title: "Follow-up change", body: "Update the caller."),
+            ])
     }
 }
 

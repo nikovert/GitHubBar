@@ -132,6 +132,10 @@ actor CleanupUIService: WorktreeCleanupServicing {
             headSHA: String(repeating: "a", count: 40), skipReason: reason,
             liveSessions: ["githubbar-codex-example": WorktreeCleanupSessionIdentity(id: "$1",
                 serverPID: 123, serverStartedAt: 1_700_000_000, sessionCreatedAt: 1_700_000_001)],
-            accountLogin: "tester", configuration: WorkspaceConfiguration())
+            accountLogin: "tester", configuration: WorkspaceConfiguration(), pullRequests: [
+                WorktreeCleanupPRSummary(key: key,
+                    title: "Improve measurement stability and preserve fallback behavior when inputs arrive late",
+                    body: "Preserve the last valid measurement when sensor input is missing. This keeps the controller stable while fresh readings arrive.")
+            ])
     }
 }
