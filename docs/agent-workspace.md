@@ -1,5 +1,8 @@
 # Local agent workspace
 
+See [Manage and review pull requests](review-workspace.md) for the larger workspace,
+diffs, local review drafts, and contextual agent chat.
+
 This fork adds a local board and pinned Codex/Claude sessions to the menu-bar PR view.
 It does not write board metadata to GitHub or Slack. The board file lives at
 `~/Library/Application Support/GitHubBar/workspace.json`, with owner-only permissions.

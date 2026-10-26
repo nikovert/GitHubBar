@@ -11,9 +11,15 @@ not part of GitHubBar's future trusted Developer ID/Sparkle update channel.
 - Keep local priorities, status tags, and notes for PRs and stacks.
 - See PR titles, authors, requested reviewers, review status, and stack members on the board.
 - Pin or create Codex/Claude worktree sessions and jump to them from the menu.
+- Manage PRs in a larger window with attention queues, pins, snoozes, and activity.
+- Review unified or split diffs, save inline drafts, and explicitly submit reviews.
+- Ask a configured local agent about the selected PR or diff line. Configure this in
+  Settings → Workspace chat; see the bundled `agent-chat.md` guide.
+- Preview merged-worktree cleanup with PR titles, descriptions, and session choices.
 
-Agent sessions use local tmux and Apple Terminal. They do not automatically review,
-comment on, or publish to GitHub.
+Agent sessions use local tmux and the configured terminal. Chat is advisory; publishing
+a review requires an explicit action. Background review workers use their separate
+configuration and fix/comment/reply policies.
 
 ## Install and launch
 

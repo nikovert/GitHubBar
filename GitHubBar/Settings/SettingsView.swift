@@ -8,6 +8,7 @@ struct SettingsView: View {
     @Bindable var updateModel: UpdateModel
     @Bindable var reviewAgentModel: ReviewAgentModel
     @Bindable var workspaceModel: WorkspaceModel
+    @State private var showsChatSettings = false
 
     var body: some View {
         ScrollView {
@@ -30,6 +31,12 @@ struct SettingsView: View {
 
                 SettingsSection(title: "Review agent", systemImage: "terminal") {
                     ReviewAgentSettingsView(model: reviewAgentModel, workspace: workspaceModel)
+                }
+
+                SettingsSection(title: "Workspace chat", systemImage: "bubble.left.and.bubble.right") {
+                    Text("Connect a local agent for PR questions and cited answers in the review workspace.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Button("Configure chat agent…") { showsChatSettings = true }
                 }
 
                 SettingsSection(title: "Refresh", systemImage: "arrow.clockwise") {
@@ -99,6 +106,7 @@ struct SettingsView: View {
         }
         .frame(minWidth: 620, minHeight: 650)
         .background(Color(nsColor: .windowBackgroundColor))
+        .sheet(isPresented: $showsChatSettings) { ReviewChatSettingsView() }
         .onChange(of: appearance) { _, newValue in
             AppearanceController.apply(AppearancePreference(rawValue: newValue) ?? .system)
         }

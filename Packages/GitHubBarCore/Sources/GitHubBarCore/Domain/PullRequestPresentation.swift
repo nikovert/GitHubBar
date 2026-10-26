@@ -12,6 +12,7 @@ public struct PullRequestPresentation: Codable, Equatable, Identifiable, Sendabl
     public let author: PullRequestAuthorPresentation?
     public let reviewDecision: PullRequestReviewDecision?
     public let stackMembership: PullRequestStackMembership?
+    public let createdAt: Date?
     public let updatedAt: Date
     public let requestedReviewers: [ReviewerPresentation]?
     public let reviewers: [ReviewerPresentation]
@@ -29,6 +30,7 @@ public struct PullRequestPresentation: Codable, Equatable, Identifiable, Sendabl
         author: PullRequestAuthorPresentation? = nil,
         reviewDecision: PullRequestReviewDecision? = nil,
         stackMembership: PullRequestStackMembership? = nil,
+        createdAt: Date? = nil,
         updatedAt: Date,
         requestedReviewers: [ReviewerPresentation]? = [],
         reviewers: [ReviewerPresentation],
@@ -45,6 +47,7 @@ public struct PullRequestPresentation: Codable, Equatable, Identifiable, Sendabl
         self.author = author
         self.reviewDecision = reviewDecision
         self.stackMembership = stackMembership
+        self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.requestedReviewers = requestedReviewers
         self.reviewers = reviewers
@@ -70,7 +73,7 @@ public struct PullRequestPresentation: Codable, Equatable, Identifiable, Sendabl
     private enum CodingKeys: String, CodingKey {
         case id, repositoryID, repositoryNameWithOwner
         case number, title, url, isDraft, state, author
-        case reviewDecision, stackMembership, updatedAt, requestedReviewers, reviewers
+        case reviewDecision, stackMembership, createdAt, updatedAt, requestedReviewers, reviewers
         case headSHA
     }
 
@@ -90,6 +93,7 @@ public struct PullRequestPresentation: Codable, Equatable, Identifiable, Sendabl
             PullRequestStackMembership.self,
             forKey: .stackMembership
         )
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
         reviewers = try container.decode([ReviewerPresentation].self, forKey: .reviewers)
         headSHA = try container.decodeIfPresent(String.self, forKey: .headSHA)

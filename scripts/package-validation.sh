@@ -99,6 +99,8 @@ lipo -create \
 
 cp GitHubBar/Resources/Info.plist "$app_path/Contents/Info.plist"
 cp docs/releases/validation-release.md "$app_path/Contents/Resources/VALIDATION-README.md"
+cp docs/agent-chat.md "$app_path/Contents/Resources/agent-chat.md"
+cp scripts/review-chat-adapter.py "$app_path/Contents/Resources/review-chat-adapter.py"
 
 plutil -replace CFBundleExecutable -string GitHubBar "$app_path/Contents/Info.plist"
 plutil -replace CFBundleIdentifier -string com.nikovert.githubbar "$app_path/Contents/Info.plist"

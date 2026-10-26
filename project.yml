@@ -32,6 +32,10 @@ targets:
       - path: GitHubBar
         excludes:
           - Resources/Info.plist
+      - path: docs/agent-chat.md
+        buildPhase: resources
+      - path: scripts/review-chat-adapter.py
+        buildPhase: resources
     dependencies:
       - package: GitHubBarCore
       - package: Sparkle

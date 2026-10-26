@@ -650,6 +650,7 @@ private extension GraphQLGitHubWorkloadClient {
           isDraft
           reviewDecision
           state
+          createdAt
           updatedAt
           headRefOid
           author { login avatarUrl }
@@ -995,6 +996,7 @@ private struct PullRequestDTO: Decodable, Sendable {
     let isDraft: Bool
     let reviewDecision: String?
     let state: String
+    let createdAt: String?
     let updatedAt: String
     let headRefOid: String?
     let author: ActorDTO?
@@ -1106,6 +1108,7 @@ private struct HydratedRecord: Sendable {
     let number: Int
     let title: String
     let url: URL
+    let createdAt: Date?
     let updatedAt: Date
     let headSHA: String?
     var requestsComplete = true
@@ -1142,6 +1145,7 @@ private struct HydratedRecord: Sendable {
         number = dto.number
         title = dto.title
         self.url = url
+        self.createdAt = dto.createdAt.flatMap(parseGitHubDate)
         self.updatedAt = updatedAt
         headSHA = dto.headRefOid
         requestedReviewers = dto.reviewRequests.nodes.compactMap(\.requestedReviewer)
@@ -1182,6 +1186,7 @@ private struct HydratedRecord: Sendable {
             author: author,
             reviewDecision: reviewDecision,
             stackMembership: stackMembership,
+            createdAt: createdAt,
             updatedAt: updatedAt,
             requestedReviewers: requestsComplete && !reviewRequestsPageInfo.hasNextPage ? requestedReviewerPresentations : nil,
             reviewers: reviewerOrder.compactMap { reviewersByID[$0] },

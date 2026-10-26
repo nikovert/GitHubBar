@@ -28,17 +28,18 @@ final class WorkspaceWindowController {
 
     private func makeWindow() -> NSWindow {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 950, height: 720),
+            contentRect: NSRect(x: 0, y: 0, width: 1380, height: 860),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
         )
         window.title = "GitHubBar Workspace"
         window.isReleasedWhenClosed = false
-        window.contentMinSize = NSSize(width: 780, height: 590)
+        window.contentMinSize = NSSize(width: 1100, height: 700)
         window.contentView = NSHostingView(
-            rootView: WorkspaceBoardView(workspace: workspaceModel, appModel: appModel)
+            rootView: ReviewWorkspaceView(workspace: workspaceModel, appModel: appModel)
         )
+        window.setFrameAutosaveName("GitHubBarReviewWorkspace")
         window.center()
         return window
     }

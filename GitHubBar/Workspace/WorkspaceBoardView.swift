@@ -169,7 +169,7 @@ struct WorkspaceBoardView: View {
     }
 }
 
-private struct WorkspaceDetailView: View {
+struct WorkspaceDetailView: View {
     @Bindable var workspace: WorkspaceModel
     let subject: BoardSubject
     let stackRoot: PullRequestKey?
@@ -499,14 +499,14 @@ private struct TagEditorRow: View {
     }
 }
 
-private extension BoardSubject {
+extension BoardSubject {
     var isStack: Bool {
         if case .stack = self { return true }
         return false
     }
 }
 
-private func requestedReviewerSummary(for pullRequest: PullRequestPresentation) -> String {
+func requestedReviewerSummary(for pullRequest: PullRequestPresentation) -> String {
     guard let requested = pullRequest.requestedReviewers else { return "Unavailable" }
     guard !requested.isEmpty else { return "None" }
     return requested.map(\.displayName).joined(separator: ", ")

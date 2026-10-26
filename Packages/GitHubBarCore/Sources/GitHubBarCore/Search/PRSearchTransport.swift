@@ -186,6 +186,7 @@ struct PRSearchRESTClient: Sendable {
         let state: String
         let mergedAt: Date?
         let user: User?
+        let createdAt: Date?
         let updatedAt: Date
         let base: Ref
         let head: Ref
@@ -201,7 +202,7 @@ struct PRSearchRESTClient: Sendable {
                 repositoryNameWithOwner: repository?.fullName ?? "", number: number, title: title, url: htmlUrl,
                 isDraft: draft ?? false, state: mergedAt != nil ? .merged : state == "closed" ? .closed : .open,
                 author: user.map { PullRequestAuthorPresentation(id: $0.login, displayName: $0.login, avatarURL: $0.avatarUrl) },
-                updatedAt: updatedAt, reviewers: [], headSHA: head.sha)
+                createdAt: createdAt, updatedAt: updatedAt, reviewers: [], headSHA: head.sha)
             return PRSearchDocument(pullRequest: presentation, body: body ?? "", baseSHA: base.sha, headSHA: head.sha,
                 changedFiles: changedFiles ?? -1, files: nil,
                 coverage: PRSearchCoverage(reasons: ["Changed files have not been indexed."]), refreshedAt: now)

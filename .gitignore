@@ -5,3 +5,4 @@ xcuserdata/
 Packages/*/.build/
 .build/
 dist/
+__pycache__/
