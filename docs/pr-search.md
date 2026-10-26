@@ -22,8 +22,9 @@ scan can take time. Typing alone searches data already available locally. Pause
 stops network work; reopening the window does not silently restart a paused scan.
 
 Each match shows its title, repository, author, state and matching excerpt. File
-and code matches offer a Files changed link. Search opens GitHub pages only: it
-does not post comments, request reviews, run agents or check out code.
+and code matches offer a Files changed link. Click a result to open the PR in the workspace; right-click to go directly to
+GitHub. Searching does not post comments, request reviews, run agents, or check
+out code.
 
 ## Coverage and privacy
 

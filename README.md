@@ -1,59 +1,121 @@
-<div align="center">
-
 # GitHubBar
 
-### Review at scale, from your menu bar.
+**Your pull requests, code reviews, and coding agents—in one native Mac workspace.**
 
 [![macOS 14+](https://img.shields.io/badge/macOS-14%2B-0d1117?style=flat-square&logo=apple&logoColor=white)](https://github.com/nikovert/GitHubBar/releases)
 [![Swift 6](https://img.shields.io/badge/Swift-6-F05138?style=flat-square&logo=swift&logoColor=white)](https://www.swift.org/)
 
-<img src="docs/assets/githubbar-hero.png" alt="GitHubBar showing a high-volume pull-request review queue in the macOS menu bar" width="100%" />
+Keep your review queue in the menu bar. Open the full workspace to prioritize PRs,
+read diffs, draft and submit reviews, ask an agent questions, and jump into the
+terminal session attached to your worktree.
 
-**The number in your menu bar is your review queue.** Open GitHubBar to see review requests and your own pull requests across the repositories that matter on this Mac.
+[Build the latest](#build-from-source) · [Published downloads](https://github.com/nikovert/GitHubBar/releases) · [Workspace guide](docs/review-workspace.md) · [Report an issue](https://github.com/nikovert/GitHubBar/issues)
 
-[Download a validation build](https://github.com/nikovert/GitHubBar/releases) · [Build this fork](#build-from-source) · [Report an issue](https://github.com/nikovert/GitHubBar/issues)
+![Native dark-mode review workspace with split diffs, file navigation, review controls, and the agent chat panel](docs/assets/workspace-review-dark.png)
 
-</div>
+*The native review workspace in dark mode. Screenshots use example PR data; the
+chat panel is shown before connecting an agent.*
 
 > This is a development fork of
-> [FranciscoMoretti/GitHubBar](https://github.com/FranciscoMoretti/GitHubBar).
-> Upstream releases do **not** include the workspace board or agent-session features below.
+> [FranciscoMoretti/GitHubBar](https://github.com/FranciscoMoretti/GitHubBar), with a
+> larger management workspace, in-app code review, and local agent integrations.
+> The screenshots show current `main`; published validation downloads may lag behind it.
 
-## Workspace additions in this fork
+## Know what needs your attention
 
-- Follow macOS appearance or choose Light or Dark in Settings.
-- Keep local priority, status tags, and agent notes for each PR or stack. PRs inherit stack
-  values until overridden. The board is stored only on this Mac.
-- Scan PR titles, authors, requested reviewers, review status, and stack members in the board.
-- Use **Search PRs** to search your pull-request workload. See the
-  [PR search guide](docs/pr-search.md).
-- Create a new Codex or Claude worktree/tmux session, or pin an existing one.
-- Select a PR with a running pinned agent from the menu to jump into its tmux session.
-  Right-click a PR to edit its board entry, or open **Workspace Board…** from the menu.
-- Let local agents update the board with the `GitHubBarWorkspaceCLI` command. See
-  [Agent workspace guide](docs/agent-workspace.md).
-- Configure any compatible local review worker in Settings, or use an external worker,
-  for queued reviews, policy, and progress through the bundled CLI. Coding CLIs need a
-  compatible adapter. Defaults: fixes off, comments on own PRs only, replies off.
-  See [Agent review integration and packaging](docs/agent-reviews.md).
+- **One place for your PRs and review requests.** Switch between Needs attention,
+  My pull requests, Requested reviews, Pinned, Snoozed, and All PRs.
+- **Recognize the work immediately.** See titles, authors, requested reviewers,
+  review status, age, activity, and the next action alongside each PR.
+- **Priorities with a reason.** Set a manual priority, inherit one from a stack,
+  or use automatic ranking that favors PRs where you are the sole requested human
+  reviewer. Configure priority authors to surface the work that matters to you.
+- **Keep your own context.** Add notes and extended status tags to PRs and stacks,
+  pin important work, or snooze a PR for 24 hours. Compatible agents can update
+  priorities, notes, and status through the bundled workspace CLI.
+- **Keep the menu bar useful.** Scan review workflow sections, reviewer avatars,
+  and compact PR stacks. Filter to a device-local set of repositories and open the
+  menu with <kbd>⌥</kbd><kbd>⌘</kbd><kbd>G</kbd>.
+- **Choose your appearance.** Follow macOS or choose Light or Dark in Settings.
 
-## Built for review at scale
+![Light-mode management workspace showing attention queues, PR metadata, priority reasons, age and activity, and the next review action](docs/assets/workspace-manage-light.png)
 
-- **Know what needs you.** The menu-bar count shows open pull requests currently awaiting your review—GitHubBar's only proactive attention signal.
-- **See your whole review workflow.** Scan Needs your review, Returned to you, Needs reviewers, Waiting for reviewers, Approved, and Drafts in one native menu.
-- **Keep people visible.** Every row shows the author and review roster, so missing reviewers and completed reviews are easy to spot.
-- **Focus each Mac.** Switch instantly between all accessible repositories and a device-local pinned set configured in Settings.
-- **Navigate stacked work.** Linear pull-request stacks collapse into compact, section-aware rows; open the submenu to see every member's current section and reviewers.
-- **Move without the website.** Open any pull request directly, refresh on demand, or press <kbd>⌥</kbd><kbd>⌘</kbd><kbd>G</kbd> from anywhere.
+*Manage PRs in light mode. Activity uses GitHub's update timestamp, which can include bots.*
 
-GitHubBar reconciles the full account workload in the background, keeps the latest useful snapshot available, and applies repository scope locally—switching views does not trigger another GitHub request.
+## Review code inside the app
+
+- **Unified and split diffs** with file navigation, line numbers, resizable file
+  lists, and a hideable agent panel for more reading space.
+- **Overview, Changes, Threads, and Workspace tabs** for the description, checks,
+  conversation, code, local notes, and attached sessions.
+- **Inline drafts and review submission.** Select a line, save a comment locally,
+  then explicitly submit a Comment, Approval, or Request changes review to GitHub.
+- **Pick up where you left off.** Mark files viewed, save a local review baseline,
+  and use **Since my last review** to inspect subsequent changes.
+- **Drafts stay attached to the code you reviewed.** State is scoped to the account,
+  PR, head, and base. Earlier drafts remain accessible when the diff changes;
+  failed submissions retain them.
+
+<details>
+<summary>See unified diffs in light mode</summary>
+
+![Light-mode review workspace with a unified diff and contextual agent panel](docs/assets/workspace-review-light.png)
+
+</details>
+
+Incomplete and binary patches are identified explicitly, with links to GitHub for
+missing code. Viewed-file state and review baselines are local to this Mac.
+
+## Ask an agent about the code
+
+Ask “What tests are missing?”, “Explain this change,” or a question about a selected
+diff line without switching away from the PR. The agent receives the description,
+a bounded diff excerpt, selected-line context, and recent conversation. Answers can
+include clickable file/line citations.
+
+In **Settings → Workspace chat**, choose **Use an installed CLI…** for a locally
+authenticated Codex or Claude CLI, or connect any command implementing the
+[JSON chat protocol](docs/agent-chat.md). CLI presets use the bundled Python adapter
+and require Python 3. Chat is optional; the app works without an agent.
+
+For background reviews, connect a compatible worker in **Settings → Review agent**.
+Request or re-request a review from a PR, then follow its queued, running, completed,
+or failed status. Control fixes (**off**, **low risk**, or **all**), comments, and
+replies with PR and stack policies. Defaults keep fixes and replies off, and allow
+review comments only on your own PRs.
+
+Chat and background reviews have separate connections: chat answers are advisory;
+background workers enforce their configured write policies. A general coding CLI
+needs a separate compatible worker adapter to consume review requests. See
+[review-worker setup](docs/agent-reviews.md).
+
+## Keep worktrees and agent sessions attached to the PR
+
+Create a Codex or Claude worktree/tmux session, or pin an existing session to a PR
+or stack. **Jump to session** brings you back to the terminal work for that PR.
+
+When the work is merged, **Clean up merged worktrees…** previews eligible worktrees
+with PR titles and short descriptions. Cleanup checks repository state and sync
+with origin. If sessions are attached, choose whether to stop all eligible sessions
+or review the list and select individually.
+
+The [agent workspace guide](docs/agent-workspace.md) covers checkout configuration,
+terminal sessions, stack inheritance, and updates through `GitHubBarWorkspaceCLI`.
+
+## Find a PR by what it changes
+
+**Search PRs** matches titles, descriptions, changed file paths, and available diff
+content. Results show **In your list** first, followed by **Extended results** from
+the repositories you select—including open, draft, merged, and closed PRs.
+
+Click a result or menu PR to open it in the workspace. Right-click a PR in the
+search results or menu to go directly to GitHub. Search is literal and
+case-insensitive; it does not send code to a model. Coverage and progress indicators
+show when a scan is incomplete. See the [search guide](docs/pr-search.md).
 
 ## Install
 
-Download this fork's **validation prerelease** from
-[nikovert/GitHubBar releases](https://github.com/nikovert/GitHubBar/releases). The
-[upstream releases](https://github.com/FranciscoMoretti/GitHubBar/releases) do not
-include the workspace board or agent sessions.
+GitHubBar requires **macOS 14 or newer** and supports **Apple Silicon and Intel**.
 
 1. Install and sign in to [GitHub CLI](https://cli.github.com/):
 
@@ -62,31 +124,29 @@ include the workspace board or agent sessions.
    gh auth login
    ```
 
-2. Download the validation ZIP and adjacent `.sha256` file, then verify them:
+2. Choose a validation ZIP and its adjacent `.sha256` file from
+   [this fork's releases](https://github.com/nikovert/GitHubBar/releases).
+   Check the release notes for included features; build from source for the latest
+   workspace shown above.
+
+3. Verify the downloaded ZIP, then unzip and move `GitHubBar.app` to **Applications**:
 
    ```sh
    cd ~/Downloads
    shasum -a 256 --check GitHubBar-validation-*.zip.sha256
    ```
 
-3. Unzip GitHubBar and move it to **Applications**.
+Validation builds are ad-hoc signed and not Apple-notarized. If macOS blocks the
+first launch, use **System Settings → Privacy & Security → Open Anyway** after
+verifying the checksum. The fork uses `com.nikovert.githubbar`, separate from upstream.
 
-This validation build is ad-hoc signed, not Apple-notarized, and does not update itself.
-Use **Settings → Updates → Download Updates…** to open this fork's releases, download
-the newest ZIP and checksum, then quit GitHubBar and replace it in Applications.
-Signed stable builds retain Sparkle's **Check for Updates** flow.
-On first launch, macOS may block it: try opening GitHubBar once, then choose **Open
-Anyway** under **System Settings → Privacy & Security** after verifying the checksum.
-Its `com.nikovert.githubbar` bundle ID is separate from the upstream app.
-
-GitHubBar requires macOS 14 or newer and runs on both Apple silicon and Intel Macs.
-Developer ID signing, notarization, and automatic updates remain planned for a future release.
-
-## Privacy
-
-GitHubBar uses your existing GitHub CLI login. Tokens stay in memory, preferences and the latest PR snapshot stay on your Mac, and diagnostics never record repository names, PR titles, usernames, or credentials.
+Use **Settings → Updates → Download Updates…** to open the releases page. Quit the
+app before replacing it with a newer download. Validation builds do not install
+updates automatically; Developer ID signing and notarization remain future work.
 
 ## Build from source
+
+Install full Xcode, select its developer tools, then run from this repository:
 
 ```bash
 brew install xcodegen gh tmux
@@ -94,23 +154,37 @@ scripts/generate-project.sh
 open GitHubBar.xcodeproj
 ```
 
-Build and run the `GitHubBar` scheme in Xcode. Install and authenticate `gh`, then set a
-local checkout and worktree root in **Workspace Board… → Workspace setup** before launching
-an agent. Install `codex` or `claude` on your `PATH`. macOS will ask permission to automate
-Terminal the first time you jump to a pinned tmux session.
+Build and run the `GitHubBar` scheme. Authenticate `gh`, open **Workspace Board**,
+and select a PR. The **Workspace** tab contains checkout and worktree-root setup.
+Install and authenticate `codex` or `claude` to use their optional session/chat
+integrations; terminal automation may prompt for macOS permission on first use.
 
-Xcode builds and both packaging scripts embed `GitHubBarWorkspaceCLI` in the app's
-`Contents/MacOS` directory. Run
-`scripts/package-validation.sh` to create a universal arm64/x86_64 ZIP in `dist/`.
-This builds locally without installing the app. See the
-[packaging checks and path restrictions](docs/agent-reviews.md#build-and-verify)
-before overriding output directories. Stable packaging requires the release credentials
-and notarization workflow below.
+To create a universal validation ZIP locally without installing the app:
 
-Run `scripts/check.sh` before submitting a pull request. Release details are in the [stable release runbook](docs/releases/stable-release-runbook.md) and [validation guide](docs/releases/validation-release.md).
+```bash
+GITHUBBAR_VERSION=0.6.0 scripts/package-validation.sh
+```
 
----
+The ZIP and checksum are written to `dist/`. The app bundles
+`GitHubBarWorkspaceCLI`, the chat adapter, and its setup guide. See
+[packaging checks](docs/agent-reviews.md#build-and-verify) before overriding paths.
 
-<div align="center">
-<sub>Built for developers who would rather review the PR than find the PR.</sub>
-</div>
+For the review-workspace implementation, **154 core tests, 59 app tests, and 11
+adapter tests passed**, alongside Swift 6 concurrency checks and light/dark render
+inspection. See the [validation report](docs/releases/2026-10-26-review-workspace-validation.md)
+for scope and limits. Run `scripts/check.sh` before contributing.
+
+## Local state and privacy
+
+GitHubBar uses your existing GitHub CLI login. GitHub tokens stay in memory;
+preferences, drafts, notes, and cached PR data stay on your Mac. Diagnostics omit
+repository names, PR titles, usernames, and credentials.
+
+When you ask an agent a question, PR context is passed to your configured local
+adapter. That adapter may send it to its model provider using your existing login.
+Choose an adapter and provider appropriate for the repositories you review.
+
+## Credits
+
+Based on [GitHubBar by Francisco Moretti](https://github.com/FranciscoMoretti/GitHubBar),
+with workspace and agent-integration contributions by Nikolaus Vertovec.
